@@ -7,6 +7,9 @@ import cookieParser from 'cookie-parser';
 import { config } from './config';
 import { logger } from './utils/logger';
 import { errorHandler } from './middleware/error.middleware';
+import { connectDB } from './database';
+import { connectRedis } from './database/redis';
+import authRoutes from './modules/auth/auth.routes';
 
 const app = express();
 const server = http.createServer(app);
@@ -41,11 +44,26 @@ io.on('connection', (socket) => {
   });
 });
 
+// Register API Routes
+app.use('/api/auth', authRoutes);
+
 // Global Error Handler (must be registered last)
 app.use(errorHandler);
 
 const PORT = config.port;
-server.listen(PORT, () => {
-  logger.info(`[Server] Running in ${config.env} mode on port ${PORT}`);
-});
+
+const startServer = async () => {
+  try {
+    await connectDB();
+    await connectRedis();
+    server.listen(PORT, () => {
+      logger.info(`[Server] Running in ${config.env} mode on port ${PORT}`);
+    });
+  } catch (error) {
+    logger.error('Failed to start server:', error);
+    process.exit(1);
+  }
+};
+
+startServer();
 export { app, server, io };
