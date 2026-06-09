@@ -4,11 +4,7 @@ import { AppError } from '../utils/errors';
 
 const tokenService = new TokenService();
 
-export const authenticate = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void> => {
+export const authenticate = async ( req: Request,res: Response,next: NextFunction): Promise<void> => {
   try {
     let token = req.cookies.accessToken;
 

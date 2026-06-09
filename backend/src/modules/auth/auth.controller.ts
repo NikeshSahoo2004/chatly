@@ -134,4 +134,29 @@ export class AuthController {
       next(error);
     }
   };
+
+  /**
+   * Get current user profile (session verification)
+   */
+  public getMe = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const userId = req.user?.userId;
+      if (!userId) {
+        res.status(401).json({
+          status: 'error',
+          message: 'Not authenticated',
+        });
+        return;
+      }
+
+      const user = await this.authService.getCurrentUser(userId);
+
+      res.status(200).json({
+        status: 'success',
+        data: { user },
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
 }

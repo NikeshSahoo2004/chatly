@@ -35,6 +35,12 @@ const MessageSchema = new Schema<IMessage>(
       type: Boolean,
       default: false,
     },
+    deletedFor: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: 'User',
+      },
+    ],
     deliveredTo: [
       {
         userId: {

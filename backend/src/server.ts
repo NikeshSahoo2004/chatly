@@ -8,8 +8,14 @@ import { config } from './config';
 import { logger } from './utils/logger';
 import { errorHandler } from './middleware/error.middleware';
 import { connectDB } from './database';
-import { connectRedis } from './database/redis';
+import { connectRedis, redisClient, subClient } from './database/redis';
 import authRoutes from './modules/auth/auth.routes';
+import chatRoutes from './modules/chat/chat.routes';
+import { createAdapter } from '@socket.io/redis-adapter';
+import { socketAuth } from './modules/socket/socket.middleware';
+import { registerSocketHandlers } from './modules/socket/socket.handler';
+import { eventEmitter } from './events/emitter';
+import { Conversation } from './modules/chat/conversation.model';
 
 const app = express();
 const server = http.createServer(app);
@@ -37,15 +43,81 @@ const io = new Server(server, {
   }
 });
 
+// Configure Redis scaling adapter if connected
+if (redisClient.isOpen && subClient.isOpen) {
+  io.adapter(createAdapter(redisClient, subClient));
+  logger.info('[Socket.IO] Redis scaling adapter registered successfully');
+} else {
+  logger.warn('[Socket.IO] Redis clients not open. Falling back to in-memory adapter.');
+}
+
+// Handshake verification middleware
+io.use(socketAuth);
+
+// Bind connection events
 io.on('connection', (socket) => {
-  logger.info(`Socket connected: ${socket.id}`);
-  socket.on('disconnect', () => {
-    logger.info(`Socket disconnected: ${socket.id}`);
-  });
+  registerSocketHandlers(io, socket);
+});
+
+// Broadcast messages emitted from the message service
+eventEmitter.on('message:new', async (message) => {
+  const conversationId = message.conversationId.toString();
+  // Broadcast to the conversation room (active users in the chat UI)
+  io.to(`conversation:${conversationId}`).emit('message:receive', message);
+
+  try {
+    const conversation = await Conversation.findById(conversationId);
+    if (conversation) {
+      // Broadcast update notification to all participants' user rooms (active devices)
+      conversation.participants.forEach((participantId) => {
+        io.to(`user:${participantId.toString()}`).emit('message:notification', {
+          conversationId,
+          message,
+        });
+      });
+    }
+  } catch (err) {
+    logger.error('[Socket] Error notifying participants on new message:', err);
+  }
+});
+
+// Broadcast message deletion events
+eventEmitter.on('message:delete', (data: { messageId: string; conversationId: string }) => {
+  io.to(`conversation:${data.conversationId}`).emit('message:delete', data);
+});
+
+// Broadcast group creation to all group participants
+eventEmitter.on('group:created', (group) => {
+  try {
+    group.participants.forEach((participant: any) => {
+      const participantId = participant._id ? participant._id.toString() : participant.toString();
+      io.to(`user:${participantId}`).emit('group:created', group);
+    });
+  } catch (err) {
+    logger.error('[Socket] Error broadcasting group:created event:', err);
+  }
+});
+
+// Broadcast group updates to group room and notify user rooms
+eventEmitter.on('group:updated', (group) => {
+  try {
+    const conversationId = group._id.toString();
+    // Emit to conversation room (active group chat UI)
+    io.to(`conversation:${conversationId}`).emit('group:updated', group);
+
+    // Notify all participants' personal rooms
+    group.participants.forEach((participant: any) => {
+      const participantId = participant._id ? participant._id.toString() : participant.toString();
+      io.to(`user:${participantId}`).emit('group:notification_update', group);
+    });
+  } catch (err) {
+    logger.error('[Socket] Error broadcasting group:updated event:', err);
+  }
 });
 
 // Register API Routes
 app.use('/api/auth', authRoutes);
+app.use('/api', chatRoutes);
 
 // Global Error Handler (must be registered last)
 app.use(errorHandler);
@@ -65,5 +137,7 @@ const startServer = async () => {
   }
 };
 
-startServer();
+if (config.env !== 'test') {
+  startServer();
+}
 export { app, server, io };

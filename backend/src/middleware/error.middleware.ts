@@ -6,7 +6,6 @@ export const errorHandler = (
   err: Error,
   req: Request,
   res: Response,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   next: NextFunction
 ) => {
   if (err instanceof AppError) {
@@ -17,7 +16,6 @@ export const errorHandler = (
     });
   }
 
-  // Unhandled programming/external dependency error
   logger.error('Unhandled Server Error: ', err);
   return res.status(500).json({
     status: 'error',

@@ -19,4 +19,7 @@ router.post('/refresh', controller.refresh);
 // Logout endpoint (requires access token validation first)
 router.post('/logout', authenticate, controller.logout);
 
+// Session check endpoint
+router.get('/me', authenticate, controller.getMe);
+
 export default router;

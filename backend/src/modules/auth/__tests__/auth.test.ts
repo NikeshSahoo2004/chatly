@@ -1,5 +1,5 @@
 import request from 'supertest';
-import { app } from '../../../server';
+import { app, server } from '../../../server';
 import { User } from '../../user/user.model';
 import { RefreshToken } from '../refresh-token.model';
 import { redisClient } from '../../../database/redis';
@@ -52,17 +52,32 @@ jest.mock('../../../database/index', () => ({
 
 jest.mock('../../../database/redis', () => ({
   redisClient: {
-    isOpen: true,
+    isOpen: false, // Set to false to skip Redis socket adapter registration in tests
     connect: jest.fn().mockResolvedValue(undefined),
     quit: jest.fn().mockResolvedValue(undefined),
     setEx: jest.fn(),
     get: jest.fn(),
+  },
+  subClient: {
+    isOpen: false,
   },
   connectRedis: jest.fn().mockResolvedValue(undefined),
   disconnectRedis: jest.fn().mockResolvedValue(undefined),
 }));
 
 describe('Auth Endpoints Integration Tests', () => {
+  beforeAll((done) => {
+    if (!server.listening) {
+      server.listen(5050, () => done());
+    } else {
+      done();
+    }
+  });
+
+  afterAll((done) => {
+    server.close(() => done());
+  });
+
   beforeEach(() => {
     jest.clearAllMocks();
 
@@ -250,6 +265,31 @@ describe('Auth Endpoints Integration Tests', () => {
       const cookies = Array.isArray(setCookieHeader) ? setCookieHeader.join(';') : (setCookieHeader || '');
       expect(cookies).toContain('accessToken=;');
       expect(cookies).toContain('refreshToken=;');
+    });
+  });
+
+  describe('GET /api/auth/me', () => {
+    it('should return the current user profile when authenticated', async () => {
+      const jwt = require('jsonwebtoken');
+      const mockAccessToken = jwt.sign(
+        { userId: 'mock_user_id', username: 'testuser', email: 'test@example.com', role: 'user' },
+        config.jwt.secret,
+        { expiresIn: '15m' }
+      );
+
+      const response = await request(app)
+        .get('/api/auth/me')
+        .set('Cookie', [`accessToken=${mockAccessToken}`]);
+
+      expect(response.status).toBe(200);
+      expect(response.body.status).toBe('success');
+      expect(response.body.data.user).toBeDefined();
+      expect(response.body.data.user.username).toBe('testuser');
+    });
+
+    it('should return 401 when no auth token is provided', async () => {
+      const response = await request(app).get('/api/auth/me');
+      expect(response.status).toBe(401);
     });
   });
 });

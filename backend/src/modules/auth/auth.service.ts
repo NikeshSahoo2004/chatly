@@ -167,4 +167,15 @@ export class AuthService {
     // Blacklist token in Redis
     await this.tokenService.blacklistToken(token, 'refresh');
   }
+
+  /**
+   * Get user profile by ID
+   */
+  public async getCurrentUser(userId: string): Promise<IUser> {
+    const user = await this.userRepo.findById(userId);
+    if (!user) {
+      throw new AppError('User profile not found', 404);
+    }
+    return user;
+  }
 }
