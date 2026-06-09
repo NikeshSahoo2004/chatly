@@ -16,7 +16,6 @@ export const errorHandler = (
     });
   }
 
-  // Unhandled programming/external dependency error
   logger.error('Unhandled Server Error: ', err);
   return res.status(500).json({
     status: 'error',

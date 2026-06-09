@@ -13,9 +13,7 @@ if (!keyHex || keyHex.length !== 64) {
 const KEY = Buffer.from(keyHex, 'hex');
 
 export class EncryptionService {
-  /**
-   * Encrypt plaintext string using AES-256-GCM
-   */
+  // Encrypt plaintext string using AES-256-GCM
   public encryptMessage(text: string): { encryptedContent: string; iv: string; authTag: string } {
     try {
       const iv = crypto.randomBytes(12); // 96-bit IV
@@ -37,9 +35,7 @@ export class EncryptionService {
     }
   }
 
-  /**
-   * Decrypt ciphertext using AES-256-GCM and verify integrity with Auth Tag
-   */
+  // Decrypt ciphertext using AES-256-GCM and verify integrity with Auth Tag
   public decryptMessage(encryptedContent: string, ivHex: string, authTagHex: string): string {
     try {
       const iv = Buffer.from(ivHex, 'hex');

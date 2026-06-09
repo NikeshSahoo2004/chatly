@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "Backend service for Chatly real-time chat application",
   "main": "dist/server.js",
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "scripts": {
     "build": "tsc",
     "start": "node dist/server.js",
