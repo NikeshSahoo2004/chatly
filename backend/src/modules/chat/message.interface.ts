@@ -18,6 +18,7 @@ export interface IMessage extends Document {
   authTag: string; // Authentication Tag (hex)
   isDeleted: boolean;
   isPinned: boolean;
+  deletedFor: Schema.Types.ObjectId[];
   deliveredTo: IDeliveredReceipt[];
   seenBy: ISeenReceipt[];
   replyTo?: Schema.Types.ObjectId;
