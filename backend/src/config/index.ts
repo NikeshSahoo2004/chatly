@@ -2,14 +2,28 @@ import dotenv from 'dotenv';
 import path from 'path';
 
 function parseCorsOrigins(value: string | undefined): string[] {
+  const defaults = [
+    'http://localhost:5173',
+    'https://chatapp.nikesh-sahoo.workers.dev'
+  ];
   if (!value) {
-    return ['http://localhost:5173'];
+    return defaults;
   }
 
-  return value
+  const parsed = value
     .split(',')
-    .map((origin) => origin.trim())
+    .map((origin) => origin.trim().replace(/^['"]|['"]$/g, '').replace(/\/$/, ''))
     .filter(Boolean);
+
+  // Always ensure defaults are included
+  defaults.forEach(def => {
+    const cleanDef = def.replace(/\/$/, '');
+    if (!parsed.includes(cleanDef)) {
+      parsed.push(cleanDef);
+    }
+  });
+
+  return parsed;
 }
 
 // Load env vars

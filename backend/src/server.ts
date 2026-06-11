@@ -20,14 +20,37 @@ import { Conversation } from './modules/chat/conversation.model';
 const app = express();
 const server = http.createServer(app);
 
-// Global Middlewares
-app.use(helmet());
-app.use(cors({
-  origin: config.cors.origin,
+// CORS Configuration Options
+const corsOptions = {
+  origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+    // Allow requests with no origin (like mobile apps, curl, postman)
+    if (!origin) {
+      return callback(null, true);
+    }
+    
+    const allowedOrigins = config.cors.origin;
+    const cleanOrigin = origin.trim().replace(/\/$/, '');
+    
+    const isAllowed = allowedOrigins.some((allowed) => {
+      const cleanAllowed = allowed.trim().replace(/\/$/, '');
+      return cleanAllowed === '*' || cleanAllowed === cleanOrigin;
+    });
+
+    if (isAllowed) {
+      callback(null, true);
+    } else {
+      logger.warn(`[CORS] Request from origin ${origin} blocked. Allowed origins: ${allowedOrigins.join(', ')}`);
+      callback(null, false);
+    }
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
-}));
+};
+
+// Global Middlewares
+app.use(helmet());
+app.use(cors(corsOptions));
 app.use(express.json());
 app.use(cookieParser());
 
@@ -38,12 +61,7 @@ app.get('/health', (req, res) => {
 
 // WebSocket Configuration
 const io = new Server(server, {
-  cors: {
-    origin: config.cors.origin,
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    credentials: true,
-    allowedHeaders: ['Content-Type', 'Authorization'],
-  }
+  cors: corsOptions
 });
 
 // Configure Redis scaling adapter if connected
