@@ -43,6 +43,18 @@ export default defineConfig([
 ])
 ```
 
+## Netlify Deployment
+
+Use the following settings when deploying the frontend to Netlify:
+
+- Build command: `npm run build`
+- Publish directory: `dist`
+- Environment variables:
+  - `VITE_API_URL=https://chatly-iw9x.onrender.com/api`
+  - `VITE_SOCKET_URL=https://chatly-iw9x.onrender.com`
+
+The backend must also allow your Netlify site in `CORS_ORIGIN` so authenticated requests and Socket.IO handshakes succeed.
+
 You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
 
 ```js

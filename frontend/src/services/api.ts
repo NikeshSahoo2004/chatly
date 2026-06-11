@@ -1,9 +1,8 @@
-import axios from 'axios';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios';
+import { API_BASE_URL } from '../config/runtime';
 
 export const api = axios.create({
-  baseURL: API_URL,
+  baseURL: API_BASE_URL,
   withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
@@ -11,9 +10,18 @@ export const api = axios.create({
 });
 
 let isRefreshing = false;
-let failedQueue: any[] = [];
+type FailedQueueEntry = {
+  resolve: (value?: unknown) => void;
+  reject: (reason?: unknown) => void;
+};
 
-const processQueue = (error: any, token: string | null = null) => {
+type RetryConfig = InternalAxiosRequestConfig & {
+  _retry?: boolean;
+};
+
+let failedQueue: FailedQueueEntry[] = [];
+
+const processQueue = (error: unknown, token: string | null = null) => {
   failedQueue.forEach((prom) => {
     if (error) {
       prom.reject(error);
@@ -27,8 +35,12 @@ const processQueue = (error: any, token: string | null = null) => {
 // Response Interceptor for handling token rotations automatically
 api.interceptors.response.use(
   (response) => response,
-  async (error) => {
-    const originalRequest = error.config;
+  async (error: AxiosError) => {
+    const originalRequest = error.config as RetryConfig | undefined;
+
+    if (!originalRequest) {
+      return Promise.reject(error);
+    }
 
     // Check if error status is 401 (Unauthorized) and has not been retried yet
     if (error.response?.status === 401 && !originalRequest._retry) {
@@ -51,7 +63,7 @@ api.interceptors.response.use(
       try {
         // Call the rotation refresh endpoint
         await axios.post(
-          `${API_URL}/auth/refresh`,
+            `${API_BASE_URL}/auth/refresh`,
           {},
           { withCredentials: true }
         );
