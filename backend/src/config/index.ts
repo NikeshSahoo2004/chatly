@@ -1,6 +1,17 @@
 import dotenv from 'dotenv';
 import path from 'path';
 
+function parseCorsOrigins(value: string | undefined): string[] {
+  if (!value) {
+    return ['http://localhost:5173'];
+  }
+
+  return value
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+}
+
 // Load env vars
 dotenv.config({ path: path.join(__dirname, '../../.env') });
 
@@ -23,7 +34,7 @@ export const config = {
     key: process.env.ENCRYPTION_KEY || '637861746c79656e63727970746b6579646576656c6f706d656e746b65793132', // Must be 32 bytes hex
   },
   cors: {
-    origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+    origin: parseCorsOrigins(process.env.CORS_ORIGIN),
   },
   rateLimit: {
     windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000', 10), // 15 mins

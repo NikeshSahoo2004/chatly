@@ -29,7 +29,7 @@ export class AuthController {
     return {
       httpOnly: true,
       secure: isProd,
-      sameSite: 'strict' as const,
+      sameSite: isProd ? ('none' as const) : ('lax' as const),
       maxAge,
       path: '/',
     };
@@ -123,8 +123,16 @@ export class AuthController {
       }
 
       // Clear cookies
-      res.clearCookie('accessToken', { path: '/' });
-      res.clearCookie('refreshToken', { path: '/' });
+      res.clearCookie('accessToken', {
+        path: '/',
+        secure: config.env === 'production',
+        sameSite: config.env === 'production' ? ('none' as const) : ('lax' as const),
+      });
+      res.clearCookie('refreshToken', {
+        path: '/',
+        secure: config.env === 'production',
+        sameSite: config.env === 'production' ? ('none' as const) : ('lax' as const),
+      });
 
       res.status(200).json({
         status: 'success',

@@ -26,7 +26,7 @@ services:
         placeholder: "64-character hex string (32 bytes)"
       - key: CORS_ORIGIN
         sync: false
-        placeholder: "https://your-frontend-domain.onrender.com"
+        placeholder: "http://localhost:5173,https://chatapp.nikesh-sahoo.workers.dev"
       - key: RATE_LIMIT_WINDOW_MS
         value: "900000"
       - key: RATE_LIMIT_MAX
