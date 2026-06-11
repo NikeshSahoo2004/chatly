@@ -69,6 +69,7 @@ export class AuthController {
         data: {
           user,
           accessToken, // Return in body as well for custom headers if needed
+          refreshToken,
         },
       });
     } catch (error) {
@@ -103,6 +104,7 @@ export class AuthController {
         message: 'Token refreshed successfully',
         data: {
           accessToken,
+          refreshToken,
         },
       });
     } catch (error) {

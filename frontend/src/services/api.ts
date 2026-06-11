@@ -32,6 +32,20 @@ const processQueue = (error: unknown, token: string | null = null) => {
   failedQueue = [];
 };
 
+// Request Interceptor to attach the access token to the Authorization header
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('accessToken');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
 // Response Interceptor for handling token rotations automatically
 api.interceptors.response.use(
   (response) => response,
@@ -49,7 +63,10 @@ api.interceptors.response.use(
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });
         })
-          .then(() => {
+          .then((token) => {
+            if (originalRequest.headers) {
+              originalRequest.headers.Authorization = `Bearer ${token}`;
+            }
             return api(originalRequest);
           })
           .catch((err) => {
@@ -61,21 +78,39 @@ api.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        // Call the rotation refresh endpoint
-        await axios.post(
-            `${API_BASE_URL}/auth/refresh`,
-          {},
+        // Call the rotation refresh endpoint passing the refresh token in the body
+        const refreshToken = localStorage.getItem('refreshToken');
+        const response = await axios.post(
+          `${API_BASE_URL}/auth/refresh`,
+          { refreshToken },
           { withCredentials: true }
         );
 
-        isRefreshing = false;
-        processQueue(null);
+        const newAccessToken = response.data.data.accessToken;
+        const newRefreshToken = response.data.data.refreshToken;
 
-        // Retry original request
+        if (newAccessToken) {
+          localStorage.setItem('accessToken', newAccessToken);
+        }
+        if (newRefreshToken) {
+          localStorage.setItem('refreshToken', newRefreshToken);
+        }
+
+        isRefreshing = false;
+        processQueue(null, newAccessToken);
+
+        // Retry original request with the new access token
+        if (originalRequest.headers) {
+          originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+        }
         return api(originalRequest);
       } catch (refreshError) {
         isRefreshing = false;
         processQueue(refreshError, null);
+
+        // If rotation fails, clear any stale tokens
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken');
 
         // If rotation fails, dispatch global event to clear state and redirect
         if (typeof window !== 'undefined') {

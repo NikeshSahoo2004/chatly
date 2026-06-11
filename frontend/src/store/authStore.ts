@@ -38,6 +38,16 @@ export const useAuthStore = create<AuthState>((set) => ({
     try {
       const response = await api.post('/auth/login', credentials);
       const user = response.data.data.user;
+      const accessToken = response.data.data.accessToken;
+      const refreshToken = response.data.data.refreshToken;
+
+      if (accessToken) {
+        localStorage.setItem('accessToken', accessToken);
+      }
+      if (refreshToken) {
+        localStorage.setItem('refreshToken', refreshToken);
+      }
+
       set({ user, isAuthenticated: true, isLoading: false });
     } catch (err: any) {
       const message = err.response?.data?.message || 'Login failed';
@@ -49,8 +59,27 @@ export const useAuthStore = create<AuthState>((set) => ({
   register: async (details) => {
     set({ isLoading: true, error: null });
     try {
-      const response = await api.post('/auth/register', details);
-      const user = response.data.data.user;
+      // Register the user
+      await api.post('/auth/register', details);
+      
+      // Automatically log them in to fetch access and refresh tokens
+      const loginResponse = await api.post('/auth/login', {
+        username: details.username,
+        email: details.email,
+        password: details.password,
+      });
+
+      const user = loginResponse.data.data.user;
+      const accessToken = loginResponse.data.data.accessToken;
+      const refreshToken = loginResponse.data.data.refreshToken;
+
+      if (accessToken) {
+        localStorage.setItem('accessToken', accessToken);
+      }
+      if (refreshToken) {
+        localStorage.setItem('refreshToken', refreshToken);
+      }
+
       set({ user, isAuthenticated: true, isLoading: false });
     } catch (err: any) {
       const message = err.response?.data?.message || 'Registration failed';
@@ -67,23 +96,28 @@ export const useAuthStore = create<AuthState>((set) => ({
         // Ignore API failures during logout, clear local state anyway
       }
     }
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
     set({ user: null, isAuthenticated: false, error: null });
   },
 
   checkAuth: async () => {
     set({ isLoading: true, error: null });
     try {
-      // Endpoint to fetch current user profile using active session cookies
-      // We will map this to GET /api/auth/me or similar, let's make sure it checks session
-      // Wait, in our auth controller did we define a getMe endpoint?
-      // Let's check auth.routes.ts to see if we have getMe or profile endpoint.
-      // If we don't, we can add GET /api/auth/me or verify how we check session.
-      // Let's check auth.routes.ts.
+      // Check if we have an access token locally
+      const token = localStorage.getItem('accessToken');
+      if (!token) {
+        set({ user: null, isAuthenticated: false, isLoading: false });
+        return;
+      }
+
       const response = await api.get('/auth/me');
       const user = response.data.data.user;
       set({ user, isAuthenticated: true, isLoading: false });
     } catch (err) {
       // Session is inactive, reset values silently without throwing errors on boot check
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
       set({ user: null, isAuthenticated: false, isLoading: false });
     }
   },
