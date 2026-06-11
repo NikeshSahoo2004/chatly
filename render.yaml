@@ -1,0 +1,47 @@
+services:
+  - type: web
+    name: chatly-backend
+    env: node
+    plan: free
+    rootDir: backend
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGO_URI
+        sync: false
+        placeholder: "mongodb+srv://username:password@cluster.mongodb.net/database"
+      - key: REDIS_URL
+        fromService:
+          name: chatly-redis
+          type: redis
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: ENCRYPTION_KEY
+        sync: false
+        placeholder: "64-character hex string (32 bytes)"
+      - key: CORS_ORIGIN
+        sync: false
+        placeholder: "https://your-frontend-domain.onrender.com"
+      - key: RATE_LIMIT_WINDOW_MS
+        value: "900000"
+      - key: RATE_LIMIT_MAX
+        value: "100"
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+        placeholder: "Optional Cloudinary cloud name"
+      - key: CLOUDINARY_API_KEY
+        sync: false
+        placeholder: "Optional Cloudinary API key"
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+        placeholder: "Optional Cloudinary API secret"
+
+redis:
+  - name: chatly-redis
+    plan: free
+    ipAllowList: [] # internal connection only for security

@@ -31,7 +31,7 @@ app.use(cookieParser());
 
 // Health Check API
 app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'ok', timestamp: new Date() });
+  res.status(200).json({ status: 'Healthy', timestamp: new Date() });
 });
 
 // WebSocket Configuration

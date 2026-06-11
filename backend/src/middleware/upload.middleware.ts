@@ -2,7 +2,6 @@ import multer from 'multer';
 import { AppError } from '../utils/errors';
 
 const storage = multer.memoryStorage();
-
 const fileFilter = (req: any, file: any, cb: any) => {
   const allowedMimeTypes = [
     'image/jpeg',
