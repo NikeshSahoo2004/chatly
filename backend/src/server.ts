@@ -16,6 +16,7 @@ import { socketAuth } from './modules/socket/socket.middleware';
 import { registerSocketHandlers } from './modules/socket/socket.handler';
 import { eventEmitter } from './events/emitter';
 import { Conversation } from './modules/chat/conversation.model';
+import { initAIService } from './services/ai.service';
 
 const app = express();
 const server = http.createServer(app);
@@ -79,6 +80,9 @@ io.use(socketAuth);
 io.on('connection', (socket) => {
   registerSocketHandlers(io, socket);
 });
+
+// Initialize AI Service
+initAIService(io);
 
 // Broadcast messages emitted from the message service
 eventEmitter.on('message:new', async (message) => {
