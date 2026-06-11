@@ -1,8 +1,6 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { Server } from 'socket.io';
-import { Conversation } from '../modules/chat/conversation.model';
-import { Message } from '../modules/chat/message.model';
-import { User } from '../modules/user/user.model';
+import mongoose from 'mongoose';
 import { EncryptionService } from './encryption.service';
 import { eventEmitter } from '../events/emitter';
 import { logger } from '../utils/logger';
@@ -24,31 +22,51 @@ export const initAIService = (io: Server) => {
   // Listen to new messages
   eventEmitter.on('message:new', async (message) => {
     try {
-      // Don't respond to messages sent by the AI Bot itself
+      const messageId = message?._id?.toString() || 'unknown';
       const senderIdStr = typeof message.senderId === 'object' && message.senderId
         ? (message.senderId._id?.toString() || message.senderId.id?.toString())
         : message.senderId?.toString();
+      const conversationId = message?.conversationId?.toString();
+
+      logger.info(`[AI Service] message:new event intercepted. MsgId: ${messageId}, SenderId: ${senderIdStr}, ConvId: ${conversationId}`);
+
+      const UserModel = mongoose.model('User');
+      const ConversationModel = mongoose.model('Conversation');
+      const MessageModel = mongoose.model('Message');
 
       // Find the AI Bot user to compare IDs and get its details
-      const aiBot = await User.findOne({ username: 'chatly_ai' });
-      if (!aiBot) return;
+      const aiBot = await UserModel.findOne({ username: 'chatly_ai' });
+      if (!aiBot) {
+        logger.warn('[AI Service] AI Bot user (chatly_ai) not found in database. Ignoring message.');
+        return;
+      }
 
       const aiBotUserId = aiBot._id.toString();
+      logger.info(`[AI Service] AI Bot User ID: ${aiBotUserId}, Sender User ID: ${senderIdStr}`);
 
       if (senderIdStr === aiBotUserId) {
+        logger.debug('[AI Service] Message was sent by the AI Bot itself. Ignoring.');
         return;
       }
 
       // Check if conversation exists
-      const conversationId = message.conversationId.toString();
-      const conversation = await Conversation.findById(conversationId)
+      if (!conversationId) {
+        logger.warn('[AI Service] Conversation ID is missing in message object. Ignoring.');
+        return;
+      }
+      const conversation = await ConversationModel.findById(conversationId)
         .populate('participants', 'username name');
-      if (!conversation) return;
+      if (!conversation) {
+        logger.warn(`[AI Service] Conversation ${conversationId} not found in database. Ignoring.`);
+        return;
+      }
 
-      // Check if the AI Bot is a participant
-      const isAIBotInConversation = conversation.participants.some(
-        (p: any) => p._id.toString() === aiBotUserId
-      );
+      // Check if the AI Bot is a participant (supporting both populated and unpopulated participant arrays)
+      const isAIBotInConversation = conversation.participants.some((p: any) => {
+        const participantId = p._id ? p._id.toString() : p.toString();
+        return participantId === aiBotUserId;
+      });
+      logger.info(`[AI Service] Is AI Bot a participant of this conversation? ${isAIBotInConversation}`);
       if (!isAIBotInConversation) return;
 
       // Determine if the AI bot should respond
@@ -68,9 +86,11 @@ export const initAIService = (io: Server) => {
         }
       }
 
+      logger.info(`[AI Service] Conversation type: ${conversation.isGroup ? 'Group' : 'Direct'}, shouldRespond: ${shouldRespond}`);
       if (!shouldRespond) return;
 
       // Broadcast typing indicator to the conversation
+      logger.info(`[AI Service] Emitting typing:start for AI Bot in room conversation:${conversationId}`);
       io.to(`conversation:${conversationId}`).emit('typing:start', {
         conversationId,
         userId: aiBotUserId,
@@ -78,7 +98,7 @@ export const initAIService = (io: Server) => {
       });
 
       // Gather recent messages for context (last 15 messages)
-      const rawMessages = await Message.find({ conversationId })
+      const rawMessages = await MessageModel.find({ conversationId })
         .sort({ createdAt: -1 })
         .limit(15)
         .populate('senderId', 'username name');
@@ -156,7 +176,7 @@ export const initAIService = (io: Server) => {
       const { encryptedContent, iv, authTag } = encryptionService.encryptMessage(aiResponseText);
 
       // Save the AI message to DB
-      const botMessage = await Message.create({
+      const botMessage = await MessageModel.create({
         conversationId,
         senderId: aiBotUserId,
         content: encryptedContent,
@@ -165,12 +185,12 @@ export const initAIService = (io: Server) => {
       });
 
       // Update last message pointer in conversation
-      await Conversation.findByIdAndUpdate(conversationId, {
+      await ConversationModel.findByIdAndUpdate(conversationId, {
         lastMessage: botMessage._id,
       });
 
       // Populate AI message object
-      const populatedBotMsg = await Message.findById(botMessage._id)
+      const populatedBotMsg = await MessageModel.findById(botMessage._id)
         .populate('senderId', 'name username email avatar isOnline lastSeen');
 
       if (populatedBotMsg) {
@@ -197,7 +217,8 @@ export const initAIService = (io: Server) => {
       // Ensure typing is stopped on error
       try {
         const conversationId = message.conversationId.toString();
-        const aiBot = await User.findOne({ username: 'chatly_ai' });
+        const UserModel = mongoose.model('User');
+        const aiBot = await UserModel.findOne({ username: 'chatly_ai' });
         if (aiBot) {
           io.to(`conversation:${conversationId}`).emit('typing:stop', {
             conversationId,
