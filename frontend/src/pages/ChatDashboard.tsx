@@ -21,6 +21,7 @@ import {
   Trash,
   UserPlus,
   Crown,
+  Sparkles,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { HotstarLogo } from '../components/HotstarLogo';
@@ -47,6 +48,15 @@ export const ChatDashboard: React.FC = () => {
     deleteMessage,
     addGroupMembers,
   } = useChatStore();
+
+  const activeRecipient = activeConversation && !activeConversation.isGroup 
+    ? activeConversation.participants.find((p) => {
+        const participantId = p.id || p._id;
+        const currentUserId = user?.id || user?._id;
+        return participantId !== currentUserId;
+      })
+    : null;
+  const isActiveAIBot = activeRecipient?.username === 'chatly_ai';
 
   const [inputText, setInputText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -481,6 +491,7 @@ export const ChatDashboard: React.FC = () => {
                 : (recipient?.name || recipient?.username || 'DM').slice(0, 2).toUpperCase();
 
               const isOnline = !conv.isGroup && recipient?.isOnline;
+              const isAIBot = !conv.isGroup && recipient?.username === 'chatly_ai';
 
               return (
                 <div
@@ -488,13 +499,24 @@ export const ChatDashboard: React.FC = () => {
                   onClick={() => selectConversation(conv)}
                   className={`hs-conv-card mx-1 ${isSelected ? 'selected' : ''}`}
                 >
-                  <div className="hs-avatar">
-                    {avatarInitials}
+                  <div className={`hs-avatar ${isAIBot ? 'border border-purple-500/35 shadow-purple-500/20' : ''}`} style={isAIBot ? { background: 'linear-gradient(135deg, rgba(110, 12, 255, 0.15) 0%, rgba(255, 45, 149, 0.15) 100%)' } : undefined}>
+                    {isAIBot ? (
+                      <Sparkles className="h-4 w-4 animate-pulse" style={{ color: 'var(--hs-accent-from)' }} />
+                    ) : (
+                      avatarInitials
+                    )}
                     {isOnline && <div className="hs-online-dot" />}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-2">
-                      <span className="text-sm font-bold truncate hs-text">{title}</span>
+                      <span className="text-sm font-bold truncate hs-text flex items-center gap-1.5">
+                        {title}
+                        {isAIBot && (
+                          <span className="inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wide text-white" style={{ background: 'linear-gradient(135deg, var(--hs-accent-from) 0%, var(--hs-accent-to) 100%)', boxShadow: '0 2px 8px var(--hs-accent-glow)' }}>
+                            <Sparkles className="h-2 w-2" /> AI
+                          </span>
+                        )}
+                      </span>
                       {conv.lastMessage && (
                         <span className="text-[10px] hs-text-muted shrink-0">
                           {new Date(conv.lastMessage.createdAt).toLocaleTimeString([], {
@@ -529,24 +551,35 @@ export const ChatDashboard: React.FC = () => {
           <>
             <div className="hs-chat-header flex-wrap gap-3 py-2 sm:flex-nowrap sm:py-0">
               <div className="flex flex-1 items-center min-w-0 gap-3">
-                <div className="hs-avatar !h-10 !w-10 md:hidden">
-                  {(activeConversation.isGroup
-                    ? activeConversation.name
-                    : getDirectChatRecipient(activeConversation)?.name || 'U'
-                  )?.slice(0, 2).toUpperCase()}
+                <div className={`hs-avatar !h-10 !w-10 md:hidden ${isActiveAIBot ? 'border border-purple-500/35' : ''}`} style={isActiveAIBot ? { background: 'linear-gradient(135deg, rgba(110, 12, 255, 0.15) 0%, rgba(255, 45, 149, 0.15) 100%)' } : undefined}>
+                  {isActiveAIBot ? (
+                    <Sparkles className="h-5 w-5 animate-pulse" style={{ color: 'var(--hs-accent-from)' }} />
+                  ) : (
+                    (activeConversation.isGroup
+                      ? activeConversation.name
+                      : activeRecipient?.name || 'U'
+                    )?.slice(0, 2).toUpperCase()
+                  )}
                 </div>
                 <div className="min-w-0">
-                  <h3 className="font-bold hs-text truncate">
+                  <h3 className="font-bold hs-text truncate flex items-center gap-1.5">
                     {activeConversation.isGroup
                       ? activeConversation.name
-                      : getDirectChatRecipient(activeConversation)?.name}
+                      : activeRecipient?.name}
+                    {isActiveAIBot && (
+                      <span className="inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wide text-white" style={{ background: 'linear-gradient(135deg, var(--hs-accent-from) 0%, var(--hs-accent-to) 100%)', boxShadow: '0 2px 8px var(--hs-accent-glow)' }}>
+                        <Sparkles className="h-2.5 w-2.5" /> AI Assistant
+                      </span>
+                    )}
                   </h3>
                   <span className="text-xs hs-text-muted block">
                     {activeConversation.isGroup
                       ? `${activeConversation.participants.length} members`
-                      : getDirectChatRecipient(activeConversation)?.isOnline
-                        ? '● Online'
-                        : 'Offline'}
+                      : isActiveAIBot
+                        ? 'Active 24/7'
+                        : activeRecipient?.isOnline
+                          ? '● Online'
+                          : 'Offline'}
                   </span>
                 </div>
               </div>
@@ -658,14 +691,20 @@ export const ChatDashboard: React.FC = () => {
                     ? (msg.senderId.name || msg.senderId.username || 'User')
                     : 'User';
 
+                  const isSenderAIBot = msg.senderId && (typeof msg.senderId === 'object') && (msg.senderId as any).username === 'chatly_ai';
+
                   return (
                     <div
                       key={msg._id}
                       className={`group relative flex items-end gap-2 sm:gap-3 ${isSelf ? 'justify-end' : 'justify-start'}`}
                     >
                       {!isSelf && (
-                        <div className="hs-avatar !h-8 !w-8 !rounded-full !text-[10px]">
-                          {senderName.slice(0, 2)}
+                        <div className={`hs-avatar !h-8 !w-8 !rounded-full !text-[10px] ${isSenderAIBot ? 'border border-purple-500/35 shadow-purple-500/20' : ''}`} style={isSenderAIBot ? { background: 'linear-gradient(135deg, rgba(110, 12, 255, 0.15) 0%, rgba(255, 45, 149, 0.15) 100%)' } : undefined}>
+                          {isSenderAIBot ? (
+                            <Sparkles className="h-3.5 w-3.5 animate-pulse" style={{ color: 'var(--hs-accent-from)' }} />
+                          ) : (
+                            senderName.slice(0, 2)
+                          )}
                         </div>
                       )}
 
@@ -726,8 +765,13 @@ export const ChatDashboard: React.FC = () => {
                         }`}
                       >
                         {!isSelf && activeConversation.isGroup && !msg.isDeleted && (
-                          <span className="block text-xs font-bold mb-1" style={{ color: 'var(--hs-accent-from)' }}>
+                          <span className="font-bold mb-1 flex items-center gap-1 text-xs" style={{ color: 'var(--hs-accent-from)' }}>
                             {senderName}
+                            {isSenderAIBot && (
+                              <span className="inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.2 text-[8px] font-extrabold uppercase text-white" style={{ background: 'linear-gradient(135deg, var(--hs-accent-from) 0%, var(--hs-accent-to) 100%)' }}>
+                                <Sparkles className="h-2 w-2" /> AI
+                              </span>
+                            )}
                           </span>
                         )}
                         {msg.isDeleted ? (
@@ -1055,7 +1099,14 @@ export const ChatDashboard: React.FC = () => {
                           className="flex flex-col gap-3 p-2 hover:bg-[var(--hs-accent-soft)] rounded-lg text-sm sm:flex-row sm:items-center sm:justify-between"
                         >
                           <div className="min-w-0">
-                            <span className="font-bold block hs-text">{u.name}</span>
+                            <span className="font-bold block hs-text flex items-center gap-1.5">
+                              {u.name}
+                              {u.username === 'chatly_ai' && (
+                                <span className="inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wide text-white" style={{ background: 'linear-gradient(135deg, var(--hs-accent-from) 0%, var(--hs-accent-to) 100%)' }}>
+                                  <Sparkles className="h-2 w-2 animate-pulse" /> AI
+                                </span>
+                              )}
+                            </span>
                             <span className="text-xs hs-text-muted">@{u.username}</span>
                           </div>
                           <div className="flex flex-wrap gap-2 sm:justify-end">
