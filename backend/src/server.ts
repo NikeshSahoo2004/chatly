@@ -9,8 +9,8 @@ import { logger } from './utils/logger';
 import { errorHandler } from './middleware/error.middleware';
 import { connectDB } from './database';
 import { connectRedis, redisClient, subClient } from './database/redis';
-import authRoutes from './modules/auth/auth.routes';
-import chatRoutes from './modules/chat/chat.routes';
+import apiRoutes from './route';
+import { requestLogger } from './middleware/request-logger.middleware';
 import { createAdapter } from '@socket.io/redis-adapter';
 import { socketAuth } from './modules/socket/socket.middleware';
 import { registerSocketHandlers } from './modules/socket/socket.handler';
@@ -50,6 +50,7 @@ const corsOptions = {
 };
 
 // Global Middlewares
+app.use(requestLogger);
 app.use(helmet());
 app.use(cors(corsOptions));
 app.use(express.json());
@@ -141,8 +142,7 @@ eventEmitter.on('group:updated', (group) => {
 });
 
 // Register API Routes
-app.use('/api/auth', authRoutes);
-app.use('/api', chatRoutes);
+app.use('/api', apiRoutes);
 
 // Global Error Handler (must be registered last)
 app.use(errorHandler);
