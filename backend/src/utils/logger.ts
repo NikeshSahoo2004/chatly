@@ -1,9 +1,11 @@
 import winston from 'winston';
 import path from 'path';
 
-const logFormat = winston.format.printf(({ timestamp, level, message, stack }) => {
-  return `${timestamp} [${level.toUpperCase()}]: ${stack || message}`;
-});
+const logFormat = winston.format.printf(
+  ({ timestamp, level, message, stack }) => {
+    return `${timestamp} [${level.toUpperCase()}]: ${stack || message}`;
+  }
+);
 
 export const logger = winston.createLogger({
   level: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
@@ -15,10 +17,7 @@ export const logger = winston.createLogger({
   ),
   transports: [
     new winston.transports.Console({
-      format: winston.format.combine(
-        winston.format.colorize(),
-        logFormat
-      )
+      format: winston.format.combine(winston.format.colorize(), logFormat),
     }),
     new winston.transports.File({
       filename: path.join(__dirname, '../../logs/error.log'),
@@ -26,6 +25,6 @@ export const logger = winston.createLogger({
     }),
     new winston.transports.File({
       filename: path.join(__dirname, '../../logs/combined.log'),
-    })
-  ]
+    }),
+  ],
 });

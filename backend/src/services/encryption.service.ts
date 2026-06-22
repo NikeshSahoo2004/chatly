@@ -6,7 +6,9 @@ import { logger } from '../utils/logger';
 // Parse and validate key length at boot time
 const keyHex = config.encryption.key;
 if (!keyHex || keyHex.length !== 64) {
-  logger.error('[EncryptionService] Critical Configuration Error: ENCRYPTION_KEY must be a 64-character (32-byte) hex string');
+  logger.error(
+    '[EncryptionService] Critical Configuration Error: ENCRYPTION_KEY must be a 64-character (32-byte) hex string'
+  );
   throw new Error('Encryption key must be a 64-character (32-byte) hex string');
 }
 
@@ -14,7 +16,11 @@ const KEY = Buffer.from(keyHex, 'hex');
 
 export class EncryptionService {
   // Encrypt plaintext string using AES-256-GCM
-  public encryptMessage(text: string): { encryptedContent: string; iv: string; authTag: string } {
+  public encryptMessage(text: string): {
+    encryptedContent: string;
+    iv: string;
+    authTag: string;
+  } {
     try {
       const iv = crypto.randomBytes(12); // 96-bit IV
       const cipher = crypto.createCipheriv('aes-256-gcm', KEY, iv);
@@ -36,7 +42,11 @@ export class EncryptionService {
   }
 
   // Decrypt ciphertext using AES-256-GCM and verify integrity with Auth Tag
-  public decryptMessage(encryptedContent: string, ivHex: string, authTagHex: string): string {
+  public decryptMessage(
+    encryptedContent: string,
+    ivHex: string,
+    authTagHex: string
+  ): string {
     try {
       const iv = Buffer.from(ivHex, 'hex');
       const authTag = Buffer.from(authTagHex, 'hex');
@@ -50,8 +60,14 @@ export class EncryptionService {
 
       return decrypted;
     } catch (error: any) {
-      logger.error('[EncryptionService] Decryption failed (potential tampering or invalid key/tag):', error.message);
-      throw new AppError('Message decryption failed: content integrity verification failed', 400);
+      logger.error(
+        '[EncryptionService] Decryption failed (potential tampering or invalid key/tag):',
+        error.message
+      );
+      throw new AppError(
+        'Message decryption failed: content integrity verification failed',
+        400
+      );
     }
   }
 }

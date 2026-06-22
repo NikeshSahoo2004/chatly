@@ -35,7 +35,9 @@ router.get('/users/search', async (req, res, next) => {
         { email: { $regex: query, $options: 'i' } },
       ],
       _id: { $ne: req.user?.userId },
-    }).select('name username email avatar isOnline lastSeen').limit(10);
+    })
+      .select('name username email avatar isOnline lastSeen')
+      .limit(10);
 
     res.status(200).json({ status: 'success', data: { users } });
   } catch (err) {
@@ -44,20 +46,58 @@ router.get('/users/search', async (req, res, next) => {
 });
 
 // Conversations routes
-router.post('/conversations', validate(createConversationSchema), conversationController.createConversation);
+router.post(
+  '/conversations',
+  validate(createConversationSchema),
+  conversationController.createConversation
+);
 router.get('/conversations', conversationController.getConversations);
-router.post('/conversations/group', validate(createGroupSchema), conversationController.createGroupConversation);
+router.post(
+  '/conversations/group',
+  validate(createGroupSchema),
+  conversationController.createGroupConversation
+);
 router.get('/conversations/:id', conversationController.getConversationById);
-router.post('/conversations/:id/participants', validate(updateGroupParticipantsSchema), conversationController.addGroupParticipants);
-router.delete('/conversations/:id/participants', validate(updateGroupParticipantsSchema), conversationController.removeGroupParticipants);
-router.patch('/conversations/:id/admins', validate(updateGroupAdminsSchema), conversationController.updateGroupAdmins);
-router.post('/conversations/:id/leave', conversationController.leaveGroupConversation);
+router.post(
+  '/conversations/:id/participants',
+  validate(updateGroupParticipantsSchema),
+  conversationController.addGroupParticipants
+);
+router.delete(
+  '/conversations/:id/participants',
+  validate(updateGroupParticipantsSchema),
+  conversationController.removeGroupParticipants
+);
+router.patch(
+  '/conversations/:id/admins',
+  validate(updateGroupAdminsSchema),
+  conversationController.updateGroupAdmins
+);
+router.post(
+  '/conversations/:id/leave',
+  conversationController.leaveGroupConversation
+);
 
 // Messages routes
-router.post('/messages', validate(sendMessageSchema), messageController.sendMessage);
-router.get('/messages/:conversationId', validate(getMessagesQuerySchema), messageController.getMessages);
-router.get('/messages/:conversationId/search', messageController.searchMessages);
-router.post('/chat/upload', upload.single('file'), messageController.uploadFile);
+router.post(
+  '/messages',
+  validate(sendMessageSchema),
+  messageController.sendMessage
+);
+router.get(
+  '/messages/:conversationId',
+  validate(getMessagesQuerySchema),
+  messageController.getMessages
+);
+router.get(
+  '/messages/:conversationId/search',
+  messageController.searchMessages
+);
+router.post(
+  '/chat/upload',
+  upload.single('file'),
+  messageController.uploadFile
+);
 router.delete('/messages/:id', messageController.deleteMessage);
 
 export default router;

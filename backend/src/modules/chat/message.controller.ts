@@ -8,7 +8,11 @@ export class MessageController {
   /**
    * Send a new message
    */
-  public sendMessage = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  public sendMessage = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
     try {
       const userId = req.user?.userId;
       const { conversationId, content, replyTo } = req.body;
@@ -17,7 +21,12 @@ export class MessageController {
         throw new AppError('Authentication required', 401);
       }
 
-      const message = await this.messageService.sendMessage(userId, conversationId, content, replyTo);
+      const message = await this.messageService.sendMessage(
+        userId,
+        conversationId,
+        content,
+        replyTo
+      );
 
       res.status(201).json({
         status: 'success',
@@ -31,7 +40,11 @@ export class MessageController {
   /**
    * Get messages for a conversation with cursor-based pagination
    */
-  public getMessages = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  public getMessages = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
     try {
       const userId = req.user?.userId;
       const { conversationId } = req.params;
@@ -50,7 +63,8 @@ export class MessageController {
       );
 
       // Determine next cursor (oldest message's createdAt timestamp)
-      const nextCursor = messages.length > 0 ? messages[messages.length - 1].createdAt : null;
+      const nextCursor =
+        messages.length > 0 ? messages[messages.length - 1].createdAt : null;
 
       res.status(200).json({
         status: 'success',
@@ -68,7 +82,11 @@ export class MessageController {
   /**
    * Search messages inside a conversation (decrypt in-memory)
    */
-  public searchMessages = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  public searchMessages = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
     try {
       const userId = req.user?.userId;
       const { conversationId } = req.params;
@@ -79,10 +97,17 @@ export class MessageController {
       }
 
       if (!query) {
-        throw new AppError('Query parameter "q" is required for searching', 400);
+        throw new AppError(
+          'Query parameter "q" is required for searching',
+          400
+        );
       }
 
-      const messages = await this.messageService.searchMessages(conversationId, userId, query);
+      const messages = await this.messageService.searchMessages(
+        conversationId,
+        userId,
+        query
+      );
 
       res.status(200).json({
         status: 'success',
@@ -97,7 +122,11 @@ export class MessageController {
   /**
    * Upload file to Cloudinary and return details
    */
-  public uploadFile = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  public uploadFile = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
     try {
       const userId = req.user?.userId;
       if (!userId) {
@@ -109,7 +138,8 @@ export class MessageController {
       }
 
       // Dynamic import to configure Cloudinary only when needed
-      const { default: cloudinary } = await import('../../config/cloudinary.config');
+      const { default: cloudinary } =
+        await import('../../config/cloudinary.config');
 
       // Detect resource type
       const isVideo = req.file.mimetype.startsWith('video/');
@@ -154,7 +184,11 @@ export class MessageController {
   /**
    * Delete a message
    */
-  public deleteMessage = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  public deleteMessage = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
     try {
       const userId = req.user?.userId;
       const messageId = req.params.id;
@@ -168,7 +202,11 @@ export class MessageController {
         throw new AppError('Invalid or missing deletion type parameter', 400);
       }
 
-      const result = await this.messageService.deleteMessage(messageId, userId, rawType);
+      const result = await this.messageService.deleteMessage(
+        messageId,
+        userId,
+        rawType
+      );
 
       res.status(200).json({
         status: 'success',

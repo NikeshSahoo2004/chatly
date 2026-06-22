@@ -8,11 +8,16 @@ function parseDuration(duration: string): number {
   const value = parseInt(match[1], 10);
   const unit = match[2];
   switch (unit) {
-    case 's': return value * 1000;
-    case 'm': return value * 60 * 1000;
-    case 'h': return value * 60 * 60 * 1000;
-    case 'd': return value * 24 * 60 * 60 * 1000;
-    default: return 0;
+    case 's':
+      return value * 1000;
+    case 'm':
+      return value * 60 * 1000;
+    case 'h':
+      return value * 60 * 60 * 1000;
+    case 'd':
+      return value * 24 * 60 * 60 * 1000;
+    default:
+      return 0;
   }
 }
 
@@ -22,7 +27,8 @@ export class AuthController {
   // Helper to get cookie options
   private getCookieOptions(type: 'access' | 'refresh') {
     const isProd = config.env === 'production';
-    const durationStr = type === 'access' ? config.jwt.expiration : config.jwt.refreshExpiration;
+    const durationStr =
+      type === 'access' ? config.jwt.expiration : config.jwt.refreshExpiration;
     // Safely parse duration to milliseconds
     const maxAge = parseDuration(durationStr);
 
@@ -38,7 +44,11 @@ export class AuthController {
   /**
    * Handle user registration
    */
-  public register = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  public register = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
     try {
       const user = await this.authService.register(req.body);
       res.status(201).json({
@@ -54,14 +64,26 @@ export class AuthController {
   /**
    * Handle user login
    */
-  public login = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  public login = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
     try {
       const { email, username, password } = req.body;
-      const { user, accessToken, refreshToken } = await this.authService.login(email, username, password);
+      const { user, accessToken, refreshToken } = await this.authService.login(
+        email,
+        username,
+        password
+      );
 
       // Set cookies
       res.cookie('accessToken', accessToken, this.getCookieOptions('access'));
-      res.cookie('refreshToken', refreshToken, this.getCookieOptions('refresh'));
+      res.cookie(
+        'refreshToken',
+        refreshToken,
+        this.getCookieOptions('refresh')
+      );
 
       res.status(200).json({
         status: 'success',
@@ -80,7 +102,11 @@ export class AuthController {
   /**
    * Handle token refresh / session rotation
    */
-  public refresh = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  public refresh = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
     try {
       // Get refresh token from cookie or authorization header
       const token = req.cookies.refreshToken || req.body.refreshToken;
@@ -93,11 +119,16 @@ export class AuthController {
         return;
       }
 
-      const { accessToken, refreshToken } = await this.authService.rotateRefreshToken(token);
+      const { accessToken, refreshToken } =
+        await this.authService.rotateRefreshToken(token);
 
       // Set cookies
       res.cookie('accessToken', accessToken, this.getCookieOptions('access'));
-      res.cookie('refreshToken', refreshToken, this.getCookieOptions('refresh'));
+      res.cookie(
+        'refreshToken',
+        refreshToken,
+        this.getCookieOptions('refresh')
+      );
 
       res.status(200).json({
         status: 'success',
@@ -115,7 +146,11 @@ export class AuthController {
   /**
    * Handle user logout
    */
-  public logout = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  public logout = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
     try {
       const userId = req.user?.userId;
       const token = req.cookies.refreshToken || req.body.refreshToken;
@@ -128,12 +163,14 @@ export class AuthController {
       res.clearCookie('accessToken', {
         path: '/',
         secure: config.env === 'production',
-        sameSite: config.env === 'production' ? ('none' as const) : ('lax' as const),
+        sameSite:
+          config.env === 'production' ? ('none' as const) : ('lax' as const),
       });
       res.clearCookie('refreshToken', {
         path: '/',
         secure: config.env === 'production',
-        sameSite: config.env === 'production' ? ('none' as const) : ('lax' as const),
+        sameSite:
+          config.env === 'production' ? ('none' as const) : ('lax' as const),
       });
 
       res.status(200).json({
@@ -148,7 +185,11 @@ export class AuthController {
   /**
    * Get current user profile (session verification)
    */
-  public getMe = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  public getMe = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
     try {
       const userId = req.user?.userId;
       if (!userId) {

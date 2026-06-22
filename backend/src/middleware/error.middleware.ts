@@ -9,7 +9,9 @@ export const errorHandler = (
   next: NextFunction
 ) => {
   if (err instanceof AppError) {
-    logger.warn(`Operational error: ${err.message} (status: ${err.statusCode})`);
+    logger.warn(
+      `Operational error: ${err.message} (status: ${err.statusCode})`
+    );
     return res.status(err.statusCode).json({
       status: 'error',
       message: err.message,
@@ -19,6 +21,9 @@ export const errorHandler = (
   logger.error('Unhandled Server Error: ', err);
   return res.status(500).json({
     status: 'error',
-    message: process.env.NODE_ENV === 'production' ? 'Internal server error' : err.message,
+    message:
+      process.env.NODE_ENV === 'production'
+        ? 'Internal server error'
+        : err.message,
   });
 };

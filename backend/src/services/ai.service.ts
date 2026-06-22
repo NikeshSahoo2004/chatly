@@ -12,7 +12,9 @@ let genAI: GoogleGenerativeAI | null = null;
 export const initAIService = (io: Server) => {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
-    logger.warn('[AI Service] GEMINI_API_KEY is not defined. AI Bot will be offline.');
+    logger.warn(
+      '[AI Service] GEMINI_API_KEY is not defined. AI Bot will be offline.'
+    );
     return;
   }
 
@@ -23,12 +25,15 @@ export const initAIService = (io: Server) => {
   eventEmitter.on('message:new', async (message) => {
     try {
       const messageId = message?._id?.toString() || 'unknown';
-      const senderIdStr = typeof message.senderId === 'object' && message.senderId
-        ? (message.senderId._id?.toString() || message.senderId.id?.toString())
-        : message.senderId?.toString();
+      const senderIdStr =
+        typeof message.senderId === 'object' && message.senderId
+          ? message.senderId._id?.toString() || message.senderId.id?.toString()
+          : message.senderId?.toString();
       const conversationId = message?.conversationId?.toString();
 
-      logger.info(`[AI Service] message:new event intercepted. MsgId: ${messageId}, SenderId: ${senderIdStr}, ConvId: ${conversationId}`);
+      logger.info(
+        `[AI Service] message:new event intercepted. MsgId: ${messageId}, SenderId: ${senderIdStr}, ConvId: ${conversationId}`
+      );
 
       const UserModel = mongoose.model('User');
       const ConversationModel = mongoose.model('Conversation');
@@ -37,27 +42,38 @@ export const initAIService = (io: Server) => {
       // Find the AI Bot user to compare IDs and get its details
       const aiBot = await UserModel.findOne({ username: 'chatly_ai' });
       if (!aiBot) {
-        logger.warn('[AI Service] AI Bot user (chatly_ai) not found in database. Ignoring message.');
+        logger.warn(
+          '[AI Service] AI Bot user (chatly_ai) not found in database. Ignoring message.'
+        );
         return;
       }
 
       const aiBotUserId = aiBot._id.toString();
-      logger.info(`[AI Service] AI Bot User ID: ${aiBotUserId}, Sender User ID: ${senderIdStr}`);
+      logger.info(
+        `[AI Service] AI Bot User ID: ${aiBotUserId}, Sender User ID: ${senderIdStr}`
+      );
 
       if (senderIdStr === aiBotUserId) {
-        logger.debug('[AI Service] Message was sent by the AI Bot itself. Ignoring.');
+        logger.debug(
+          '[AI Service] Message was sent by the AI Bot itself. Ignoring.'
+        );
         return;
       }
 
       // Check if conversation exists
       if (!conversationId) {
-        logger.warn('[AI Service] Conversation ID is missing in message object. Ignoring.');
+        logger.warn(
+          '[AI Service] Conversation ID is missing in message object. Ignoring.'
+        );
         return;
       }
-      const conversation = await ConversationModel.findById(conversationId)
-        .populate('participants', 'username name');
+      const conversation = await ConversationModel.findById(
+        conversationId
+      ).populate('participants', 'username name');
       if (!conversation) {
-        logger.warn(`[AI Service] Conversation ${conversationId} not found in database. Ignoring.`);
+        logger.warn(
+          `[AI Service] Conversation ${conversationId} not found in database. Ignoring.`
+        );
         return;
       }
 
@@ -66,7 +82,9 @@ export const initAIService = (io: Server) => {
         const participantId = p._id ? p._id.toString() : p.toString();
         return participantId === aiBotUserId;
       });
-      logger.info(`[AI Service] Is AI Bot a participant of this conversation? ${isAIBotInConversation}`);
+      logger.info(
+        `[AI Service] Is AI Bot a participant of this conversation? ${isAIBotInConversation}`
+      );
       if (!isAIBotInConversation) return;
 
       // Determine if the AI bot should respond
@@ -86,11 +104,15 @@ export const initAIService = (io: Server) => {
         }
       }
 
-      logger.info(`[AI Service] Conversation type: ${conversation.isGroup ? 'Group' : 'Direct'}, shouldRespond: ${shouldRespond}`);
+      logger.info(
+        `[AI Service] Conversation type: ${conversation.isGroup ? 'Group' : 'Direct'}, shouldRespond: ${shouldRespond}`
+      );
       if (!shouldRespond) return;
 
       // Broadcast typing indicator to the conversation
-      logger.info(`[AI Service] Emitting typing:start for AI Bot in room conversation:${conversationId}`);
+      logger.info(
+        `[AI Service] Emitting typing:start for AI Bot in room conversation:${conversationId}`
+      );
       io.to(`conversation:${conversationId}`).emit('typing:start', {
         conversationId,
         userId: aiBotUserId,
@@ -105,21 +127,28 @@ export const initAIService = (io: Server) => {
 
       // Decrypt messages and sort by oldest first
       const messagesContext = rawMessages.reverse().map((msg) => {
-        let textContent = '';
+        let textContent: string;
         if (msg.isDeleted) {
           textContent = 'This message was deleted';
         } else {
           try {
-            textContent = encryptionService.decryptMessage(msg.content, msg.iv, msg.authTag);
-          } catch (err) {
+            textContent = encryptionService.decryptMessage(
+              msg.content,
+              msg.iv,
+              msg.authTag
+            );
+          } catch {
             textContent = '[Decryption Failed]';
           }
         }
-        
-        const isBot = msg.senderId && (msg.senderId as any).username === 'chatly_ai';
+
+        const isBot =
+          msg.senderId && (msg.senderId as any).username === 'chatly_ai';
         return {
           role: isBot ? 'model' : 'user',
-          text: isBot ? textContent : `${(msg.senderId as any)?.name || 'User'}: ${textContent}`,
+          text: isBot
+            ? textContent
+            : `${(msg.senderId as any)?.name || 'User'}: ${textContent}`,
         };
       });
 
@@ -156,14 +185,17 @@ export const initAIService = (io: Server) => {
 
       const model = genAI.getGenerativeModel({
         model: 'gemini-2.5-flash',
-        systemInstruction: 'You are Chatly AI, a helpful, witty, and friendly AI assistant integrated into Chatly, a real-time messaging application. Keep your responses conversational, concise, and helpful. You can format text with markdown (bold, lists, etc) but keep it clean. Do not add prefix metadata to your responses.',
+        systemInstruction:
+          'You are Chatly AI, a helpful, witty, and friendly AI assistant integrated into Chatly, a real-time messaging application. Keep your responses conversational, concise, and helpful. You can format text with markdown (bold, lists, etc) but keep it clean. Do not add prefix metadata to your responses.',
       });
 
       const result = await model.generateContent({
         contents: mergedContents,
       });
 
-      const aiResponseText = result.response.text() || 'Sorry, I encountered an issue processing your request.';
+      const aiResponseText =
+        result.response.text() ||
+        'Sorry, I encountered an issue processing your request.';
 
       // Stop typing indicator
       io.to(`conversation:${conversationId}`).emit('typing:stop', {
@@ -173,7 +205,8 @@ export const initAIService = (io: Server) => {
       });
 
       // Encrypt the AI response content
-      const { encryptedContent, iv, authTag } = encryptionService.encryptMessage(aiResponseText);
+      const { encryptedContent, iv, authTag } =
+        encryptionService.encryptMessage(aiResponseText);
 
       // Save the AI message to DB
       const botMessage = await MessageModel.create({
@@ -190,16 +223,20 @@ export const initAIService = (io: Server) => {
       });
 
       // Populate AI message object
-      const populatedBotMsg = await MessageModel.findById(botMessage._id)
-        .populate('senderId', 'name username email avatar isOnline lastSeen');
+      const populatedBotMsg = await MessageModel.findById(
+        botMessage._id
+      ).populate('senderId', 'name username email avatar isOnline lastSeen');
 
       if (populatedBotMsg) {
         const botMsgObj = populatedBotMsg.toObject();
         botMsgObj.content = aiResponseText;
 
         // Emit new message event to the room
-        io.to(`conversation:${conversationId}`).emit('message:receive', botMsgObj);
-        
+        io.to(`conversation:${conversationId}`).emit(
+          'message:receive',
+          botMsgObj
+        );
+
         // Also trigger notifications for other participants
         conversation.participants.forEach((participant: any) => {
           const participantId = participant._id.toString();
@@ -211,7 +248,6 @@ export const initAIService = (io: Server) => {
           }
         });
       }
-
     } catch (error) {
       logger.error('[AI Service] Error responding to message:', error);
       // Ensure typing is stopped on error
@@ -226,7 +262,9 @@ export const initAIService = (io: Server) => {
             username: 'chatly_ai',
           });
         }
-      } catch (err) {}
+      } catch {
+        // Ignore error
+      }
     }
   });
 };

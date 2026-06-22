@@ -18,7 +18,9 @@ export class TokenService {
   /**
    * Generate JWT Access Token
    */
-  public generateAccessToken(payload: Omit<TokenPayload, 'iat' | 'exp'>): string {
+  public generateAccessToken(
+    payload: Omit<TokenPayload, 'iat' | 'exp'>
+  ): string {
     return jwt.sign(payload, config.jwt.secret, {
       expiresIn: config.jwt.expiration as any,
     });
@@ -50,9 +52,13 @@ export class TokenService {
   /**
    * Blacklist a token (e.g. on logout or token reuse detection)
    */
-  public async blacklistToken(token: string, type: 'access' | 'refresh'): Promise<void> {
+  public async blacklistToken(
+    token: string,
+    type: 'access' | 'refresh'
+  ): Promise<void> {
     try {
-      const secret = type === 'access' ? config.jwt.secret : config.jwt.refreshSecret;
+      const secret =
+        type === 'access' ? config.jwt.secret : config.jwt.refreshSecret;
       const decoded = jwt.decode(token) as JwtPayload;
 
       if (!decoded || !decoded.exp) {
@@ -68,9 +74,13 @@ export class TokenService {
         // Store in Redis if client is open, otherwise log warning
         if (redisClient.isOpen) {
           await redisClient.setEx(key, secondsRemaining, '1');
-          logger.info(`[TokenService] Blacklisted ${type} token. Remaining TTL: ${secondsRemaining}s`);
+          logger.info(
+            `[TokenService] Blacklisted ${type} token. Remaining TTL: ${secondsRemaining}s`
+          );
         } else {
-          logger.warn(`[TokenService] Redis connection not open. Failed to blacklist token: ${token.substring(0, 15)}...`);
+          logger.warn(
+            `[TokenService] Redis connection not open. Failed to blacklist token: ${token.substring(0, 15)}...`
+          );
         }
       }
     } catch (error) {
@@ -81,11 +91,16 @@ export class TokenService {
   /**
    * Check if a token is blacklisted
    */
-  public async isTokenBlacklisted(token: string, type: 'access' | 'refresh'): Promise<boolean> {
+  public async isTokenBlacklisted(
+    token: string,
+    type: 'access' | 'refresh'
+  ): Promise<boolean> {
     try {
       if (!redisClient.isOpen) {
         // Fallback if Redis is down (to prevent locking out users but log a critical warning)
-        logger.warn('[TokenService] Redis is down. Skipping token blacklist check.');
+        logger.warn(
+          '[TokenService] Redis is down. Skipping token blacklist check.'
+        );
         return false;
       }
       const key = `blacklist:${type}:${token}`;

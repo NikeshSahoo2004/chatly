@@ -41,7 +41,10 @@ export class ConversationService {
   /**
    * Create or locate a 1-to-1 conversation
    */
-  public async createDirectConversation(userId: string, recipientId: string): Promise<any> {
+  public async createDirectConversation(
+    userId: string,
+    recipientId: string
+  ): Promise<any> {
     if (userId === recipientId) {
       throw new AppError('You cannot start a conversation with yourself', 400);
     }
@@ -100,7 +103,10 @@ export class ConversationService {
   /**
    * Fetch conversation details by ID
    */
-  public async getConversationById(conversationId: string, userId: string): Promise<any> {
+  public async getConversationById(
+    conversationId: string,
+    userId: string
+  ): Promise<any> {
     const conversation = await Conversation.findById(conversationId)
       .populate('participants', 'name username email avatar isOnline lastSeen')
       .populate('lastMessage');
@@ -115,7 +121,10 @@ export class ConversationService {
     );
 
     if (!isParticipant) {
-      throw new AppError('Access denied: You are not a participant of this conversation', 403);
+      throw new AppError(
+        'Access denied: You are not a participant of this conversation',
+        403
+      );
     }
 
     return this.formatConversation(conversation, userId);
@@ -181,14 +190,20 @@ export class ConversationService {
     }
 
     // Verify requesting user is an admin of the group
-    const isAdmin = conversation.admins.some((id: any) => id.toString() === userId);
+    const isAdmin = conversation.admins.some(
+      (id: any) => id.toString() === userId
+    );
     if (!isAdmin) {
-      throw new AppError('Access denied: Only group admins can add participants', 403);
+      throw new AppError(
+        'Access denied: Only group admins can add participants',
+        403
+      );
     }
 
     // Filter out users who are already participants
     const newParticipantIds = participantIds.filter(
-      (id) => !conversation.participants.some((pId: any) => pId.toString() === id)
+      (id) =>
+        !conversation.participants.some((pId: any) => pId.toString() === id)
     );
 
     if (newParticipantIds.length === 0) {
@@ -240,14 +255,22 @@ export class ConversationService {
     }
 
     // Verify requesting user is an admin of the group
-    const isAdmin = conversation.admins.some((id: any) => id.toString() === userId);
+    const isAdmin = conversation.admins.some(
+      (id: any) => id.toString() === userId
+    );
     if (!isAdmin) {
-      throw new AppError('Access denied: Only group admins can remove participants', 403);
+      throw new AppError(
+        'Access denied: Only group admins can remove participants',
+        403
+      );
     }
 
     // Group owner cannot be removed by other admins
     if (participantIds.some((id) => id === conversation.owner?.toString())) {
-      throw new AppError('Access denied: Group owner cannot be removed from the group', 400);
+      throw new AppError(
+        'Access denied: Group owner cannot be removed from the group',
+        400
+      );
     }
 
     // Remove them from participants and admins arrays
@@ -293,9 +316,14 @@ export class ConversationService {
     }
 
     // Verify requesting user is an admin of the group
-    const isAdmin = conversation.admins.some((id: any) => id.toString() === userId);
+    const isAdmin = conversation.admins.some(
+      (id: any) => id.toString() === userId
+    );
     if (!isAdmin) {
-      throw new AppError('Access denied: Only group admins can update group admins', 403);
+      throw new AppError(
+        'Access denied: Only group admins can update group admins',
+        403
+      );
     }
 
     if (action === 'add') {
@@ -304,7 +332,10 @@ export class ConversationService {
         conversation.participants.some((pId: any) => pId.toString() === id)
       );
       if (!allParticipants) {
-        throw new AppError('Access denied: All nominated admins must be participants in the group', 400);
+        throw new AppError(
+          'Access denied: All nominated admins must be participants in the group',
+          400
+        );
       }
 
       adminIds.forEach((id) => {
@@ -315,7 +346,10 @@ export class ConversationService {
     } else {
       // Cannot remove group owner from admins
       if (adminIds.some((id) => id === conversation.owner?.toString())) {
-        throw new AppError('Access denied: Group owner must remain an admin', 400);
+        throw new AppError(
+          'Access denied: Group owner must remain an admin',
+          400
+        );
       }
 
       conversation.admins = conversation.admins.filter(
@@ -342,7 +376,10 @@ export class ConversationService {
   /**
    * Leave a group conversation
    */
-  public async leaveGroupConversation(userId: string, conversationId: string): Promise<any> {
+  public async leaveGroupConversation(
+    userId: string,
+    conversationId: string
+  ): Promise<any> {
     const conversation = await Conversation.findById(conversationId);
     if (!conversation) {
       throw new AppError('Conversation not found', 404);
@@ -353,14 +390,23 @@ export class ConversationService {
     }
 
     // Verify leaving user is a participant
-    const isParticipant = conversation.participants.some((id: any) => id.toString() === userId);
+    const isParticipant = conversation.participants.some(
+      (id: any) => id.toString() === userId
+    );
     if (!isParticipant) {
-      throw new AppError('Access denied: You are not a participant in this group', 400);
+      throw new AppError(
+        'Access denied: You are not a participant in this group',
+        400
+      );
     }
 
     // Remove user from participants list
-    conversation.participants = conversation.participants.filter((pId: any) => pId.toString() !== userId);
-    conversation.admins = conversation.admins.filter((aId: any) => aId.toString() !== userId);
+    conversation.participants = conversation.participants.filter(
+      (pId: any) => pId.toString() !== userId
+    );
+    conversation.admins = conversation.admins.filter(
+      (aId: any) => aId.toString() !== userId
+    );
 
     // If zero participants remain, delete the conversation
     if (conversation.participants.length === 0) {

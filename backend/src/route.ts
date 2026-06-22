@@ -1,11 +1,13 @@
 import { Router } from 'express';
 import authRoutes from './modules/auth/auth.routes';
 import chatRoutes from './modules/chat/chat.routes';
+import otpRoutes from './modules/OTP/otp.route';
 
 const router = Router();
 
 // Mount modules
 router.use('/auth', authRoutes);
+router.use('/otp', otpRoutes);
 
 // Endpoint to list all registered routes in the application
 // Register /routes before / chatRoutes to avoid authenticate middleware execution
@@ -14,8 +16,14 @@ router.get('/routes', (req, res) => {
     const rawRoutes = getRegisteredRoutes(req.app);
     // De-duplicate and sort routes
     const uniqueRoutes = rawRoutes
-      .filter((v, i, a) => a.findIndex((t) => t.method === v.method && t.path === v.path) === i)
-      .sort((a, b) => a.path.localeCompare(b.path) || a.method.localeCompare(b.method));
+      .filter(
+        (v, i, a) =>
+          a.findIndex((t) => t.method === v.method && t.path === v.path) === i
+      )
+      .sort(
+        (a, b) =>
+          a.path.localeCompare(b.path) || a.method.localeCompare(b.method)
+      );
 
     res.status(200).json({
       status: 'success',
@@ -46,9 +54,13 @@ export interface RouteInfo {
  * @param appOrRouter - The Express application or Router stack to walk.
  * @param parentPath - The accumulated path prefix.
  */
-export function getRegisteredRoutes(appOrRouter: any, parentPath = ''): RouteInfo[] {
+export function getRegisteredRoutes(
+  appOrRouter: any,
+  parentPath = ''
+): RouteInfo[] {
   const routes: RouteInfo[] = [];
-  const stack = appOrRouter.stack || (appOrRouter._router && appOrRouter._router.stack);
+  const stack =
+    appOrRouter.stack || (appOrRouter._router && appOrRouter._router.stack);
 
   if (!stack) {
     return routes;
@@ -58,7 +70,9 @@ export function getRegisteredRoutes(appOrRouter: any, parentPath = ''): RouteInf
     if (layer.route) {
       // Direct route (e.g. router.get('/path', ...))
       const path = (parentPath + layer.route.path).replace(/\/+/g, '/');
-      const methods = Object.keys(layer.route.methods).map((m) => m.toUpperCase());
+      const methods = Object.keys(layer.route.methods).map((m) =>
+        m.toUpperCase()
+      );
       methods.forEach((method) => {
         routes.push({ method, path });
       });
@@ -84,13 +98,13 @@ export function getRegisteredRoutes(appOrRouter: any, parentPath = ''): RouteInf
           routerPath = match.startsWith('/') ? match : '/' + match;
         }
       }
-      routes.push(...getRegisteredRoutes(layer.handle, parentPath + routerPath));
+      routes.push(
+        ...getRegisteredRoutes(layer.handle, parentPath + routerPath)
+      );
     }
   });
 
   return routes;
 }
-
-
 
 export default router;

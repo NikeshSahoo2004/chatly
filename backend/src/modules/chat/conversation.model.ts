@@ -51,4 +51,7 @@ const ConversationSchema = new Schema<IConversation>(
 // Optimization index: retrieve conversations involving a user, sorted by recent updates
 ConversationSchema.index({ participants: 1, updatedAt: -1 });
 
-export const Conversation = model<IConversation>('Conversation', ConversationSchema);
+export const Conversation = model<IConversation>(
+  'Conversation',
+  ConversationSchema
+);

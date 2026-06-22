@@ -29,4 +29,7 @@ const MessageReactionSchema = new Schema<IMessageReaction>(
 // Compound Unique index: Ensures a user can place only a single active reaction emoji on any single message
 MessageReactionSchema.index({ messageId: 1, userId: 1 }, { unique: true });
 
-export const MessageReaction = model<IMessageReaction>('MessageReaction', MessageReactionSchema);
+export const MessageReaction = model<IMessageReaction>(
+  'MessageReaction',
+  MessageReactionSchema
+);

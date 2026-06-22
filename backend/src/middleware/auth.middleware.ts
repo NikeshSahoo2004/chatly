@@ -4,7 +4,11 @@ import { AppError } from '../utils/errors';
 
 const tokenService = new TokenService();
 
-export const authenticate = async ( req: Request,res: Response,next: NextFunction): Promise<void> => {
+export const authenticate = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
   try {
     let token = req.cookies.accessToken;
 
@@ -18,7 +22,10 @@ export const authenticate = async ( req: Request,res: Response,next: NextFunctio
     }
 
     // Check if access token is blacklisted in Redis
-    const isBlacklisted = await tokenService.isTokenBlacklisted(token, 'access');
+    const isBlacklisted = await tokenService.isTokenBlacklisted(
+      token,
+      'access'
+    );
     if (isBlacklisted) {
       throw new AppError('Session is invalid. Please login again.', 401);
     }
@@ -28,8 +35,11 @@ export const authenticate = async ( req: Request,res: Response,next: NextFunctio
       const decoded = tokenService.verifyAccessToken(token);
       req.user = decoded;
       next();
-    } catch (err) {
-      throw new AppError('Session expired or invalid token. Please login again.', 401);
+    } catch {
+      throw new AppError(
+        'Session expired or invalid token. Please login again.',
+        401
+      );
     }
   } catch (error) {
     next(error);

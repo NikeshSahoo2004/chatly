@@ -66,12 +66,22 @@ describe('Socket.IO Event Flow Tests', () => {
   beforeAll((done) => {
     // Generate valid JWT tokens for two test clients
     validToken1 = jwt.sign(
-      { userId: 'user_1', username: 'user1', email: 'user1@example.com', role: 'user' },
+      {
+        userId: 'user_1',
+        username: 'user1',
+        email: 'user1@example.com',
+        role: 'user',
+      },
       config.jwt.secret,
       { expiresIn: '1h' }
     );
     validToken2 = jwt.sign(
-      { userId: 'user_2', username: 'user2', email: 'user2@example.com', role: 'user' },
+      {
+        userId: 'user_2',
+        username: 'user2',
+        email: 'user2@example.com',
+        role: 'user',
+      },
       config.jwt.secret,
       { expiresIn: '1h' }
     );
@@ -133,10 +143,18 @@ describe('Socket.IO Event Flow Tests', () => {
 
     // Join conversation rooms and await acknowledgments
     await new Promise((resolve) => {
-      clientSocket1.emit('conversation:join', { conversationId: 'conv_123' }, resolve);
+      clientSocket1.emit(
+        'conversation:join',
+        { conversationId: 'conv_123' },
+        resolve
+      );
     });
     await new Promise((resolve) => {
-      clientSocket2.emit('conversation:join', { conversationId: 'conv_123' }, resolve);
+      clientSocket2.emit(
+        'conversation:join',
+        { conversationId: 'conv_123' },
+        resolve
+      );
     });
 
     // Setup wait promise for typing event receipt

@@ -28,7 +28,9 @@ export const seedAIBot = async (): Promise<void> => {
 export const connectDB = async (): Promise<void> => {
   try {
     const conn = await mongoose.connect(config.mongo.uri);
-    logger.info(`[Database] MongoDB Connected: ${conn.connection.host}/${conn.connection.name}`);
+    logger.info(
+      `[Database] MongoDB Connected: ${conn.connection.host}/${conn.connection.name}`
+    );
     await seedAIBot();
   } catch (error) {
     logger.error('[Database] MongoDB connection error:', error);
