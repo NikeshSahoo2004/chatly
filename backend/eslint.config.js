@@ -1,6 +1,6 @@
 const eslint = require('@eslint/js');
 const tseslint = require('typescript-eslint');
-const prettier = require('eslint-config-prettier');
+const eslintConfigPrettier = require('eslint-config-prettier');
 
 module.exports = tseslint.config(
   // Global ignores (replaces .eslintignore)
@@ -9,7 +9,8 @@ module.exports = tseslint.config(
       'dist/**',
       'node_modules/**',
       'coverage/**',
-      'jest.config.js'
+      'jest.config.js',
+      '.env'
     ],
   },
   // Base ESLint recommended rules
@@ -23,20 +24,7 @@ module.exports = tseslint.config(
       '@typescript-eslint/no-unused-vars': ['warn', { 'argsIgnorePattern': '^_' }],
       'no-console': 'off', // backend logging is expected
     },
-  }
+  },
+  // Prettier configuration to disable formatting conflicts (must be last)
+  eslintConfigPrettier
 );
-
-export default [
-  {
-    ignores: ["dist/", "build/", ".env", "coverage/"],
-  },
-  js.configs.recommended,
-  {
-    languageOptions: {
-      ecmaVersion: "latest",
-      sourceType: "module",
-      globals: { ...globals.node },
-    },
-  },
-  eslintConfigPrettier, // 2. Add it at the end of the array
-];
