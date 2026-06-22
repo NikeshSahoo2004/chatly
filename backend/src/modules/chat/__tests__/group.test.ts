@@ -66,17 +66,32 @@ describe('Group Chat Endpoints Integration Tests', () => {
 
   beforeAll((done) => {
     adminToken = jwt.sign(
-      { userId: adminId, username: 'admin', email: 'admin@example.com', role: 'user' },
+      {
+        userId: adminId,
+        username: 'admin',
+        email: 'admin@example.com',
+        role: 'user',
+      },
       config.jwt.secret,
       { expiresIn: '1h' }
     );
     memberToken = jwt.sign(
-      { userId: memberId, username: 'member', email: 'member@example.com', role: 'user' },
+      {
+        userId: memberId,
+        username: 'member',
+        email: 'member@example.com',
+        role: 'user',
+      },
       config.jwt.secret,
       { expiresIn: '1h' }
     );
     nonMemberToken = jwt.sign(
-      { userId: nonMemberId, username: 'nonmember', email: 'nonmember@example.com', role: 'user' },
+      {
+        userId: nonMemberId,
+        username: 'nonmember',
+        email: 'nonmember@example.com',
+        role: 'user',
+      },
       config.jwt.secret,
       { expiresIn: '1h' }
     );
@@ -116,7 +131,9 @@ describe('Group Chat Endpoints Integration Tests', () => {
       };
 
       (Conversation.create as jest.Mock).mockResolvedValue(groupObject);
-      (Conversation.findById as jest.Mock).mockImplementation(() => mockQuery(groupObject));
+      (Conversation.findById as jest.Mock).mockImplementation(() =>
+        mockQuery(groupObject)
+      );
 
       const res = await request(app)
         .post('/api/conversations/group')
@@ -211,7 +228,9 @@ describe('Group Chat Endpoints Integration Tests', () => {
         .send({ participantIds: [nonMemberId] });
 
       expect(res.status).toBe(403);
-      expect(res.body.message).toContain('Only group admins can add participants');
+      expect(res.body.message).toContain(
+        'Only group admins can add participants'
+      );
     });
   });
 
@@ -310,7 +329,12 @@ describe('Group Chat Endpoints Integration Tests', () => {
       (Conversation.findById as jest.Mock).mockImplementation(() => {
         findCount++;
         if (findCount === 1) return groupConv as any;
-        return mockQuery({ ...groupConv, participants: [memberId], admins: [memberId], owner: memberId });
+        return mockQuery({
+          ...groupConv,
+          participants: [memberId],
+          admins: [memberId],
+          owner: memberId,
+        });
       });
 
       const res = await request(app)

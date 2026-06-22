@@ -14,7 +14,9 @@ export const registerSocketHandlers = (io: Server, socket: Socket): void => {
   const userRoom = `user:${userId}`;
 
   socket.join(userRoom);
-  logger.info(`[Socket] User ${user.username} (ID: ${userId}) connected on socket: ${socket.id}`);
+  logger.info(
+    `[Socket] User ${user.username} (ID: ${userId}) connected on socket: ${socket.id}`
+  );
 
   const handlePresenceOnConnect = async () => {
     try {
@@ -31,28 +33,38 @@ export const registerSocketHandlers = (io: Server, socket: Socket): void => {
   handlePresenceOnConnect();
 
   // JOIN conversation room (channel)
-  socket.on('conversation:join', (data: { conversationId: string }, callback?: (res: any) => void) => {
-    const { conversationId } = data;
-    if (conversationId) {
-      socket.join(`conversation:${conversationId}`);
-      logger.debug(`[Socket] User ${user.username} (socket: ${socket.id}) joined room conversation:${conversationId}`);
-      if (callback) {
-        callback({ status: 'success' });
+  socket.on(
+    'conversation:join',
+    (data: { conversationId: string }, callback?: (res: any) => void) => {
+      const { conversationId } = data;
+      if (conversationId) {
+        socket.join(`conversation:${conversationId}`);
+        logger.debug(
+          `[Socket] User ${user.username} (socket: ${socket.id}) joined room conversation:${conversationId}`
+        );
+        if (callback) {
+          callback({ status: 'success' });
+        }
       }
     }
-  });
+  );
 
   // LEAVE conversation room (channel)
-  socket.on('conversation:leave', (data: { conversationId: string }, callback?: (res: any) => void) => {
-    const { conversationId } = data;
-    if (conversationId) {
-      socket.leave(`conversation:${conversationId}`);
-      logger.debug(`[Socket] User ${user.username} (socket: ${socket.id}) left room conversation:${conversationId}`);
-      if (callback) {
-        callback({ status: 'success' });
+  socket.on(
+    'conversation:leave',
+    (data: { conversationId: string }, callback?: (res: any) => void) => {
+      const { conversationId } = data;
+      if (conversationId) {
+        socket.leave(`conversation:${conversationId}`);
+        logger.debug(
+          `[Socket] User ${user.username} (socket: ${socket.id}) left room conversation:${conversationId}`
+        );
+        if (callback) {
+          callback({ status: 'success' });
+        }
       }
     }
-  });
+  );
 
   // TYPING indicators start
   socket.on('typing:start', (data: { conversationId: string }) => {
@@ -78,30 +90,36 @@ export const registerSocketHandlers = (io: Server, socket: Socket): void => {
   });
 
   // MESSAGE receipt: Delivered
-  socket.on('message:delivered', (data: { messageId: string; conversationId: string; senderId: string }) => {
-    const { messageId, conversationId, senderId } = data;
-    if (messageId && conversationId && senderId) {
-      // Direct receipt alert to the original sender's active devices
-      socket.to(`user:${senderId}`).emit('message:delivered', {
-        messageId,
-        conversationId,
-        userId,
-      });
+  socket.on(
+    'message:delivered',
+    (data: { messageId: string; conversationId: string; senderId: string }) => {
+      const { messageId, conversationId, senderId } = data;
+      if (messageId && conversationId && senderId) {
+        // Direct receipt alert to the original sender's active devices
+        socket.to(`user:${senderId}`).emit('message:delivered', {
+          messageId,
+          conversationId,
+          userId,
+        });
+      }
     }
-  });
+  );
 
   // MESSAGE receipt: Seen
-  socket.on('message:seen', (data: { messageId: string; conversationId: string; senderId: string }) => {
-    const { messageId, conversationId, senderId } = data;
-    if (messageId && conversationId && senderId) {
-      // Direct receipt alert to the original sender's active devices
-      socket.to(`user:${senderId}`).emit('message:seen', {
-        messageId,
-        conversationId,
-        userId,
-      });
+  socket.on(
+    'message:seen',
+    (data: { messageId: string; conversationId: string; senderId: string }) => {
+      const { messageId, conversationId, senderId } = data;
+      if (messageId && conversationId && senderId) {
+        // Direct receipt alert to the original sender's active devices
+        socket.to(`user:${senderId}`).emit('message:seen', {
+          messageId,
+          conversationId,
+          userId,
+        });
+      }
     }
-  });
+  );
 
   // Handle socket disconnection lifecycle
   socket.on('disconnect', async () => {
@@ -117,7 +135,10 @@ export const registerSocketHandlers = (io: Server, socket: Socket): void => {
         logger.info(`[Presence] User ${user.username} is now offline`);
       }
     } catch (err) {
-      logger.error('[Presence] Error updating online status on disconnect:', err);
+      logger.error(
+        '[Presence] Error updating online status on disconnect:',
+        err
+      );
     }
   });
 };

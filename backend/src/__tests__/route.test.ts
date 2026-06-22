@@ -45,11 +45,18 @@ describe('Route Listing API Integration Tests', () => {
       expect(Array.isArray(response.body.data.routes)).toBe(true);
 
       // Verify it contains some of our core expected routes
-      const routesList: { method: string; path: string }[] = response.body.data.routes;
-      
-      const hasMeRoute = routesList.some(r => r.path === '/api/auth/me' && r.method === 'GET');
-      const hasRegisterRoute = routesList.some(r => r.path === '/api/auth/register' && r.method === 'POST');
-      const hasRoutesRoute = routesList.some(r => r.path === '/api/routes' && r.method === 'GET');
+      const routesList: { method: string; path: string }[] =
+        response.body.data.routes;
+
+      const hasMeRoute = routesList.some(
+        (r) => r.path === '/api/auth/me' && r.method === 'GET'
+      );
+      const hasRegisterRoute = routesList.some(
+        (r) => r.path === '/api/auth/register' && r.method === 'POST'
+      );
+      const hasRoutesRoute = routesList.some(
+        (r) => r.path === '/api/routes' && r.method === 'GET'
+      );
 
       expect(hasMeRoute).toBe(true);
       expect(hasRegisterRoute).toBe(true);

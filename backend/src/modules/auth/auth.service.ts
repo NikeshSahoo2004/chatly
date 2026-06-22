@@ -78,7 +78,9 @@ export class AuthService {
 
     // Save refresh token to DB with expiry (7 days fallback)
     const decoded = this.tokenService.verifyRefreshToken(refreshToken);
-    const expiresAt = decoded.exp ? new Date(decoded.exp * 1000) : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    const expiresAt = decoded.exp
+      ? new Date(decoded.exp * 1000)
+      : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
     await RefreshToken.create({
       userId: user._id,
@@ -92,7 +94,9 @@ export class AuthService {
   /**
    * Rotate refresh token and issue new access/refresh token pairs
    */
-  public async rotateRefreshToken(token: string): Promise<{ accessToken: string; refreshToken: string }> {
+  public async rotateRefreshToken(
+    token: string
+  ): Promise<{ accessToken: string; refreshToken: string }> {
     let decoded;
     try {
       decoded = this.tokenService.verifyRefreshToken(token);
@@ -101,7 +105,10 @@ export class AuthService {
     }
 
     // Check if token is blacklisted in Redis
-    const isBlacklisted = await this.tokenService.isTokenBlacklisted(token, 'refresh');
+    const isBlacklisted = await this.tokenService.isTokenBlacklisted(
+      token,
+      'refresh'
+    );
     if (isBlacklisted) {
       throw new AppError('Token is revoked', 401);
     }
@@ -112,7 +119,9 @@ export class AuthService {
     // REUSE DETECTION: If token is valid but not in database, it has been rotated and reused.
     // Someone might have stolen this token. Revoke all sessions for this user.
     if (!activeToken) {
-      logger.warn(`[AuthService] Refresh token reuse detected for userId: ${decoded.userId}. Revoking all sessions.`);
+      logger.warn(
+        `[AuthService] Refresh token reuse detected for userId: ${decoded.userId}. Revoking all sessions.`
+      );
       await RefreshToken.deleteMany({ userId: decoded.userId });
       throw new AppError('Session breach detected. Please login again.', 401);
     }
@@ -140,7 +149,9 @@ export class AuthService {
 
     // Save new refresh token in DB
     const newDecoded = this.tokenService.verifyRefreshToken(newRefreshToken);
-    const expiresAt = newDecoded.exp ? new Date(newDecoded.exp * 1000) : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    const expiresAt = newDecoded.exp
+      ? new Date(newDecoded.exp * 1000)
+      : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
     await RefreshToken.create({
       userId: user._id,

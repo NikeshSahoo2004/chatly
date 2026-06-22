@@ -30,11 +30,15 @@ export class MessageService {
     );
 
     if (!isParticipant) {
-      throw new AppError('Access denied: You are not a participant of this conversation', 403);
+      throw new AppError(
+        'Access denied: You are not a participant of this conversation',
+        403
+      );
     }
 
     // Encrypt the message content
-    const { encryptedContent, iv, authTag } = this.encryptionService.encryptMessage(content);
+    const { encryptedContent, iv, authTag } =
+      this.encryptionService.encryptMessage(content);
 
     // Create the message
     const message = await Message.create({
@@ -97,7 +101,10 @@ export class MessageService {
     );
 
     if (!isParticipant) {
-      throw new AppError('Access denied: You are not a participant of this conversation', 403);
+      throw new AppError(
+        'Access denied: You are not a participant of this conversation',
+        403
+      );
     }
 
     // Build the query
@@ -130,7 +137,11 @@ export class MessageService {
         return msgObj;
       }
       try {
-        msgObj.content = this.encryptionService.decryptMessage(msg.content, msg.iv, msg.authTag);
+        msgObj.content = this.encryptionService.decryptMessage(
+          msg.content,
+          msg.iv,
+          msg.authTag
+        );
       } catch (err) {
         msgObj.content = '[Decryption Failed]';
       }
@@ -158,7 +169,10 @@ export class MessageService {
     );
 
     if (!isParticipant) {
-      throw new AppError('Access denied: You are not a participant of this conversation', 403);
+      throw new AppError(
+        'Access denied: You are not a participant of this conversation',
+        403
+      );
     }
 
     if (!query) {
@@ -186,7 +200,11 @@ export class MessageService {
 
     for (const msg of messages) {
       try {
-        const decrypted = this.encryptionService.decryptMessage(msg.content, msg.iv, msg.authTag);
+        const decrypted = this.encryptionService.decryptMessage(
+          msg.content,
+          msg.iv,
+          msg.authTag
+        );
         if (decrypted.toLowerCase().includes(lowerQuery)) {
           const msgObj = msg.toObject();
           msgObj.content = decrypted;
@@ -223,7 +241,10 @@ export class MessageService {
       (id: any) => id.toString() === userId
     );
     if (!isParticipant) {
-      throw new AppError('Access denied: You are not a participant of this conversation', 403);
+      throw new AppError(
+        'Access denied: You are not a participant of this conversation',
+        403
+      );
     }
 
     if (deleteType === 'me') {
@@ -239,13 +260,19 @@ export class MessageService {
     } else {
       // Enforce that only the sender can delete for everyone
       if (message.senderId.toString() !== userId) {
-        throw new AppError('Access denied: Only the sender can delete this message for everyone', 403);
+        throw new AppError(
+          'Access denied: Only the sender can delete this message for everyone',
+          403
+        );
       }
 
       // Enforce the 2-minute time window
       const timeElapsed = Date.now() - new Date(message.createdAt).getTime();
       if (timeElapsed > 2 * 60 * 1000) {
-        throw new AppError('Access denied: Messages can only be deleted for everyone within 2 minutes of sending', 400);
+        throw new AppError(
+          'Access denied: Messages can only be deleted for everyone within 2 minutes of sending',
+          400
+        );
       }
 
       // Update the message state

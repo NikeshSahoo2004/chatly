@@ -116,14 +116,12 @@ describe('Auth Endpoints Integration Tests', () => {
   describe('POST /api/auth/register', () => {
     it('should register a new user successfully', async () => {
       // User does not exist, findOne returns null (already default)
-      const response = await request(app)
-        .post('/api/auth/register')
-        .send({
-          name: 'Test User',
-          username: 'testuser',
-          email: 'test@example.com',
-          password: 'securePassword123',
-        });
+      const response = await request(app).post('/api/auth/register').send({
+        name: 'Test User',
+        username: 'testuser',
+        email: 'test@example.com',
+        password: 'securePassword123',
+      });
 
       expect(response.status).toBe(201);
       expect(response.body.status).toBe('success');
@@ -133,12 +131,10 @@ describe('Auth Endpoints Integration Tests', () => {
     });
 
     it('should fail registration on missing fields (Zod validation)', async () => {
-      const response = await request(app)
-        .post('/api/auth/register')
-        .send({
-          name: 'Test User',
-          username: '',
-        });
+      const response = await request(app).post('/api/auth/register').send({
+        name: 'Test User',
+        username: '',
+      });
 
       expect(response.status).toBe(400);
       expect(response.body.status).toBe('error');
@@ -151,14 +147,12 @@ describe('Auth Endpoints Integration Tests', () => {
         select: jest.fn().mockResolvedValue({ id: 'existing_user_id' }),
       }));
 
-      const response = await request(app)
-        .post('/api/auth/register')
-        .send({
-          name: 'Test User',
-          username: 'testuser',
-          email: 'test@example.com',
-          password: 'securePassword123',
-        });
+      const response = await request(app).post('/api/auth/register').send({
+        name: 'Test User',
+        username: 'testuser',
+        email: 'test@example.com',
+        password: 'securePassword123',
+      });
 
       expect(response.status).toBe(400);
       expect(response.body.status).toBe('error');
@@ -176,40 +170,40 @@ describe('Auth Endpoints Integration Tests', () => {
         email: 'test@example.com',
         role: 'user',
         comparePassword: jest.fn().mockResolvedValue(true),
-        toJSON: jest.fn().mockReturnValue({ id: 'mock_user_id', username: 'testuser' }),
+        toJSON: jest
+          .fn()
+          .mockReturnValue({ id: 'mock_user_id', username: 'testuser' }),
       };
-      
+
       // Setup findOne to return a query chain that resolves to mockUser
       (User.findOne as jest.Mock).mockImplementation(() => ({
         select: jest.fn().mockResolvedValue(mockUser),
       }));
 
-      const response = await request(app)
-        .post('/api/auth/login')
-        .send({
-          email: 'test@example.com',
-          password: 'securePassword123',
-        });
+      const response = await request(app).post('/api/auth/login').send({
+        email: 'test@example.com',
+        password: 'securePassword123',
+      });
 
       expect(response.status).toBe(200);
       expect(response.body.status).toBe('success');
       expect(response.headers['set-cookie']).toBeDefined();
-      
+
       // Verify cookies are set
       const setCookieHeader = response.headers['set-cookie'];
-      const cookies = Array.isArray(setCookieHeader) ? setCookieHeader.join(';') : (setCookieHeader || '');
+      const cookies = Array.isArray(setCookieHeader)
+        ? setCookieHeader.join(';')
+        : setCookieHeader || '';
       expect(cookies).toContain('accessToken');
       expect(cookies).toContain('refreshToken');
     });
 
     it('should fail login on invalid credentials', async () => {
       // User not found (default)
-      const response = await request(app)
-        .post('/api/auth/login')
-        .send({
-          email: 'notfound@example.com',
-          password: 'wrongpassword',
-        });
+      const response = await request(app).post('/api/auth/login').send({
+        email: 'notfound@example.com',
+        password: 'wrongpassword',
+      });
 
       expect(response.status).toBe(401);
       expect(response.body.status).toBe('error');
@@ -220,11 +214,17 @@ describe('Auth Endpoints Integration Tests', () => {
   describe('POST /api/auth/refresh', () => {
     it('should rotate token pair successfully', async () => {
       // Mock active token check
-      (RefreshToken.findOne as jest.Mock).mockResolvedValue({ _id: 'token_id' });
+      (RefreshToken.findOne as jest.Mock).mockResolvedValue({
+        _id: 'token_id',
+      });
 
       // Generate a mock valid refresh token using config credentials
       const jwt = require('jsonwebtoken');
-      const mockRefreshToken = jwt.sign({ userId: 'mock_user_id' }, config.jwt.refreshSecret, { expiresIn: '7d' });
+      const mockRefreshToken = jwt.sign(
+        { userId: 'mock_user_id' },
+        config.jwt.refreshSecret,
+        { expiresIn: '7d' }
+      );
 
       const response = await request(app)
         .post('/api/auth/refresh')
@@ -247,22 +247,36 @@ describe('Auth Endpoints Integration Tests', () => {
     it('should clear cookies and invalidate sessions on logout', async () => {
       const jwt = require('jsonwebtoken');
       const mockAccessToken = jwt.sign(
-        { userId: 'mock_user_id', username: 'testuser', email: 'test@example.com', role: 'user' },
+        {
+          userId: 'mock_user_id',
+          username: 'testuser',
+          email: 'test@example.com',
+          role: 'user',
+        },
         config.jwt.secret,
         { expiresIn: '15m' }
       );
-      const mockRefreshToken = jwt.sign({ userId: 'mock_user_id' }, config.jwt.refreshSecret, { expiresIn: '7d' });
+      const mockRefreshToken = jwt.sign(
+        { userId: 'mock_user_id' },
+        config.jwt.refreshSecret,
+        { expiresIn: '7d' }
+      );
 
       const response = await request(app)
         .post('/api/auth/logout')
-        .set('Cookie', [`accessToken=${mockAccessToken}`, `refreshToken=${mockRefreshToken}`]);
+        .set('Cookie', [
+          `accessToken=${mockAccessToken}`,
+          `refreshToken=${mockRefreshToken}`,
+        ]);
 
       expect(response.status).toBe(200);
       expect(response.body.status).toBe('success');
-      
+
       // Verify cookies are cleared (max-age=0 or expires in the past)
       const setCookieHeader = response.headers['set-cookie'];
-      const cookies = Array.isArray(setCookieHeader) ? setCookieHeader.join(';') : (setCookieHeader || '');
+      const cookies = Array.isArray(setCookieHeader)
+        ? setCookieHeader.join(';')
+        : setCookieHeader || '';
       expect(cookies).toContain('accessToken=;');
       expect(cookies).toContain('refreshToken=;');
     });
@@ -272,7 +286,12 @@ describe('Auth Endpoints Integration Tests', () => {
     it('should return the current user profile when authenticated', async () => {
       const jwt = require('jsonwebtoken');
       const mockAccessToken = jwt.sign(
-        { userId: 'mock_user_id', username: 'testuser', email: 'test@example.com', role: 'user' },
+        {
+          userId: 'mock_user_id',
+          username: 'testuser',
+          email: 'test@example.com',
+          role: 'user',
+        },
         config.jwt.secret,
         { expiresIn: '15m' }
       );

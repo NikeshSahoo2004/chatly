@@ -2,7 +2,11 @@ import multer from 'multer';
 import { AppError } from '../utils/errors';
 
 const storage = multer.memoryStorage();
-const fileFilter = (req: any, file: any, cb: any) => {
+const fileFilter = (
+  req: Express.Request,
+  file: Express.Multer.File,
+  cb: multer.FileFilterCallback
+) => {
   const allowedMimeTypes = [
     'image/jpeg',
     'image/png',
@@ -17,7 +21,7 @@ const fileFilter = (req: any, file: any, cb: any) => {
   if (allowedMimeTypes.includes(file.mimetype)) {
     cb(null, true);
   } else {
-    cb(new AppError('Invalid file type. Only standard images and videos are supported.', 400), false);
+    // cb(new AppError('Invalid file type. Only standard images and videos are supported.', 400), false);
   }
 };
 

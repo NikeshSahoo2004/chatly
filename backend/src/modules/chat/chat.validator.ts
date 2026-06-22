@@ -29,7 +29,10 @@ export const getMessagesQuerySchema = z.object({
       .string()
       .optional()
       .transform((val) => (val ? parseInt(val, 10) : 20))
-      .refine((val) => val > 0 && val <= 100, 'Limit must be between 1 and 100'),
+      .refine(
+        (val) => val > 0 && val <= 100,
+        'Limit must be between 1 and 100'
+      ),
     cursor: z
       .string()
       .datetime({ message: 'Cursor must be a valid ISO-8601 date string' })
@@ -71,5 +74,7 @@ export const updateGroupAdminsSchema = z.object({
 export type CreateConversationInput = z.infer<typeof createConversationSchema>;
 export type SendMessageInput = z.infer<typeof sendMessageSchema>;
 export type CreateGroupInput = z.infer<typeof createGroupSchema>;
-export type UpdateGroupParticipantsInput = z.infer<typeof updateGroupParticipantsSchema>;
+export type UpdateGroupParticipantsInput = z.infer<
+  typeof updateGroupParticipantsSchema
+>;
 export type UpdateGroupAdminsInput = z.infer<typeof updateGroupAdminsSchema>;

@@ -23,12 +23,15 @@ export class UserRepository {
     return User.findByIdAndUpdate(id, updateData, { new: true });
   }
 
-  async updateOnlineStatus(id: string, isOnline: boolean): Promise<IUser | null> {
+  async updateOnlineStatus(
+    id: string,
+    isOnline: boolean
+  ): Promise<IUser | null> {
     return User.findByIdAndUpdate(
       id,
-      { 
-        isOnline, 
-        lastSeen: new Date() 
+      {
+        isOnline,
+        lastSeen: new Date(),
       },
       { new: true }
     );

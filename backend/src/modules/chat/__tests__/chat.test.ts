@@ -78,12 +78,22 @@ describe('Chat Endpoints Integration Tests', () => {
   beforeAll((done) => {
     // Generate valid tokens
     userToken1 = jwt.sign(
-      { userId: userId1, username: 'user1', email: 'user1@example.com', role: 'user' },
+      {
+        userId: userId1,
+        username: 'user1',
+        email: 'user1@example.com',
+        role: 'user',
+      },
       config.jwt.secret,
       { expiresIn: '1h' }
     );
     userToken2 = jwt.sign(
-      { userId: userId2, username: 'user2', email: 'user2@example.com', role: 'user' },
+      {
+        userId: userId2,
+        username: 'user2',
+        email: 'user2@example.com',
+        role: 'user',
+      },
       config.jwt.secret,
       { expiresIn: '1h' }
     );
@@ -113,7 +123,9 @@ describe('Chat Endpoints Integration Tests', () => {
       });
 
       // No existing conversation
-      (Conversation.findOne as jest.Mock).mockImplementation(() => mockQuery(null));
+      (Conversation.findOne as jest.Mock).mockImplementation(() =>
+        mockQuery(null)
+      );
 
       // Mock creation returning conversation
       const newConv = {
@@ -123,7 +135,9 @@ describe('Chat Endpoints Integration Tests', () => {
         admins: [userId1, userId2],
       };
       (Conversation.create as jest.Mock).mockResolvedValue(newConv);
-      (Conversation.findById as jest.Mock).mockImplementation(() => mockQuery(newConv));
+      (Conversation.findById as jest.Mock).mockImplementation(() =>
+        mockQuery(newConv)
+      );
 
       const res = await request(app)
         .post('/api/conversations')
@@ -151,7 +165,9 @@ describe('Chat Endpoints Integration Tests', () => {
         participants: [userId1, userId2],
         admins: [userId1, userId2],
       };
-      (Conversation.findOne as jest.Mock).mockImplementation(() => mockQuery(existingConv));
+      (Conversation.findOne as jest.Mock).mockImplementation(() =>
+        mockQuery(existingConv)
+      );
 
       const res = await request(app)
         .post('/api/conversations')
@@ -171,7 +187,9 @@ describe('Chat Endpoints Integration Tests', () => {
         .send({ recipientId: userId1 });
 
       expect(res.status).toBe(400);
-      expect(res.body.message).toContain('You cannot start a conversation with yourself');
+      expect(res.body.message).toContain(
+        'You cannot start a conversation with yourself'
+      );
     });
 
     it('should fail if recipientId is not found', async () => {
@@ -192,7 +210,9 @@ describe('Chat Endpoints Integration Tests', () => {
       const conversations = [
         { _id: convId, participants: [userId1, userId2], isGroup: false },
       ];
-      (Conversation.find as jest.Mock).mockImplementation(() => mockQuery(conversations));
+      (Conversation.find as jest.Mock).mockImplementation(() =>
+        mockQuery(conversations)
+      );
 
       const res = await request(app)
         .get('/api/conversations')
@@ -212,7 +232,9 @@ describe('Chat Endpoints Integration Tests', () => {
         participants: [{ _id: userId1 }, { _id: userId2 }],
         isGroup: false,
       };
-      (Conversation.findById as jest.Mock).mockImplementation(() => mockQuery(conv));
+      (Conversation.findById as jest.Mock).mockImplementation(() =>
+        mockQuery(conv)
+      );
 
       const res = await request(app)
         .get(`/api/conversations/${convId}`)
@@ -229,7 +251,9 @@ describe('Chat Endpoints Integration Tests', () => {
         participants: [{ _id: userId2 }], // userId1 is not here
         isGroup: false,
       };
-      (Conversation.findById as jest.Mock).mockImplementation(() => mockQuery(conv));
+      (Conversation.findById as jest.Mock).mockImplementation(() =>
+        mockQuery(conv)
+      );
 
       const res = await request(app)
         .get(`/api/conversations/${convId}`)
@@ -265,7 +289,9 @@ describe('Chat Endpoints Integration Tests', () => {
       };
 
       (Message.create as jest.Mock).mockResolvedValue(savedMessage);
-      (Message.findById as jest.Mock).mockImplementation(() => mockQuery(savedMessage));
+      (Message.findById as jest.Mock).mockImplementation(() =>
+        mockQuery(savedMessage)
+      );
       (Conversation.findByIdAndUpdate as jest.Mock).mockResolvedValue(conv);
 
       const res = await request(app)
@@ -357,7 +383,9 @@ describe('Chat Endpoints Integration Tests', () => {
       };
       (Conversation.findById as jest.Mock).mockResolvedValue(conv);
 
-      const encMatch = encryptionService.encryptMessage('Lets match standard search');
+      const encMatch = encryptionService.encryptMessage(
+        'Lets match standard search'
+      );
       const encOther = encryptionService.encryptMessage('Nothing to see here');
 
       const messages = [
@@ -395,7 +423,9 @@ describe('Chat Endpoints Integration Tests', () => {
       expect(res.status).toBe(200);
       expect(res.body.status).toBe('success');
       expect(res.body.results).toBe(1);
-      expect(res.body.data.messages[0].content).toBe('Lets match standard search');
+      expect(res.body.data.messages[0].content).toBe(
+        'Lets match standard search'
+      );
     });
   });
 

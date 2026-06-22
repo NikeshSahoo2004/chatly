@@ -4,7 +4,7 @@ import path from 'path';
 function parseCorsOrigins(value: string | undefined): string[] {
   const defaults = [
     'http://localhost:5173',
-    'https://chatapp.nikesh-sahoo.workers.dev'
+    'https://chatapp.nikesh-sahoo.workers.dev',
   ];
   if (!value) {
     return defaults;
@@ -12,11 +12,16 @@ function parseCorsOrigins(value: string | undefined): string[] {
 
   const parsed = value
     .split(',')
-    .map((origin) => origin.trim().replace(/^['"]|['"]$/g, '').replace(/\/$/, ''))
+    .map((origin) =>
+      origin
+        .trim()
+        .replace(/^['"]|['"]$/g, '')
+        .replace(/\/$/, '')
+    )
     .filter(Boolean);
 
   // Always ensure defaults are included
-  defaults.forEach(def => {
+  defaults.forEach((def) => {
     const cleanDef = def.replace(/\/$/, '');
     if (!parsed.includes(cleanDef)) {
       parsed.push(cleanDef);
@@ -45,7 +50,9 @@ export const config = {
     refreshExpiration: process.env.JWT_REFRESH_EXPIRATION || '7d',
   },
   encryption: {
-    key: process.env.ENCRYPTION_KEY || '637861746c79656e63727970746b6579646576656c6f706d656e746b65793132', // Must be 32 bytes hex
+    key:
+      process.env.ENCRYPTION_KEY ||
+      '637861746c79656e63727970746b6579646576656c6f706d656e746b65793132', // Must be 32 bytes hex
   },
   cors: {
     origin: parseCorsOrigins(process.env.CORS_ORIGIN),
@@ -58,5 +65,5 @@ export const config = {
     cloudName: process.env.CLOUDINARY_CLOUD_NAME || '',
     apiKey: process.env.CLOUDINARY_API_KEY || '',
     apiSecret: process.env.CLOUDINARY_API_SECRET || '',
-  }
+  },
 };

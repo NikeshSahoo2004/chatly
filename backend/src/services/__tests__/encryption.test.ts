@@ -31,9 +31,11 @@ describe('EncryptionService Cryptographic Unit Tests', () => {
 
   it('should throw an operational AppError if the ciphertext is tampered with', () => {
     const encrypted = encryptionService.encryptMessage(samplePlaintext);
-    
+
     // Modify ciphertext (e.g. change last character of hex string)
-    const tamperedContent = encrypted.encryptedContent.slice(0, -1) + (encrypted.encryptedContent.slice(-1) === '0' ? '1' : '0');
+    const tamperedContent =
+      encrypted.encryptedContent.slice(0, -1) +
+      (encrypted.encryptedContent.slice(-1) === '0' ? '1' : '0');
 
     expect(() => {
       encryptionService.decryptMessage(
@@ -54,9 +56,10 @@ describe('EncryptionService Cryptographic Unit Tests', () => {
 
   it('should throw an operational AppError if the Initialization Vector (IV) is modified', () => {
     const encrypted = encryptionService.encryptMessage(samplePlaintext);
-    
+
     // Modify IV
-    const tamperedIv = encrypted.iv.slice(0, -1) + (encrypted.iv.slice(-1) === '0' ? '1' : '0');
+    const tamperedIv =
+      encrypted.iv.slice(0, -1) + (encrypted.iv.slice(-1) === '0' ? '1' : '0');
 
     expect(() => {
       encryptionService.decryptMessage(
@@ -69,9 +72,11 @@ describe('EncryptionService Cryptographic Unit Tests', () => {
 
   it('should throw an operational AppError if the Authentication Tag is modified', () => {
     const encrypted = encryptionService.encryptMessage(samplePlaintext);
-    
+
     // Modify Auth Tag
-    const tamperedAuthTag = encrypted.authTag.slice(0, -1) + (encrypted.authTag.slice(-1) === '0' ? '1' : '0');
+    const tamperedAuthTag =
+      encrypted.authTag.slice(0, -1) +
+      (encrypted.authTag.slice(-1) === '0' ? '1' : '0');
 
     expect(() => {
       encryptionService.decryptMessage(

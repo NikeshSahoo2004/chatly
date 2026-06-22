@@ -40,4 +40,7 @@ const NotificationSchema = new Schema<INotification>(
 // Compound index: Fetch unread alerts for a recipient sorted by date
 NotificationSchema.index({ recipientId: 1, isRead: 1, createdAt: -1 });
 
-export const Notification = model<INotification>('Notification', NotificationSchema);
+export const Notification = model<INotification>(
+  'Notification',
+  NotificationSchema
+);

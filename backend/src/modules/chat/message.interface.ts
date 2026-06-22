@@ -14,7 +14,7 @@ export interface IMessage extends Document {
   conversationId: Schema.Types.ObjectId;
   senderId: Schema.Types.ObjectId;
   content: string; // Encrypted ciphertext
-  iv: string;      // Initialization Vector (hex)
+  iv: string; // Initialization Vector (hex)
   authTag: string; // Authentication Tag (hex)
   isDeleted: boolean;
   isPinned: boolean;
